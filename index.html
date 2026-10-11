@@ -3,13 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
-<title>SetList — Prompteur pour musiciens</title>
+<title>MusicApp</title>
 <meta name="description" content="Prompteur hors-ligne pour musiciens : paroles, accords, transposition, playlists.">
 <meta name="color-scheme" content="dark">
 <meta name="theme-color" content="#0A0B0F">
 <style>
 /* =========================================================================
-   SETLIST — Prompteur pour musiciens
+   MUSICAPP — Prompteur pour musiciens
    Application 100% hors-ligne, aucune ressource externe, aucun serveur.
    ========================================================================= */
 
@@ -147,7 +147,6 @@ input, textarea, select{ font-family: inherit; color: inherit; }
   font-size:19px; font-weight:800; letter-spacing:.02em;
   font-stretch: condensed;
 }
-.brand-accent{ color: var(--accent); }
 
 .topbar-actions{ display:flex; gap:8px; }
 
@@ -632,15 +631,6 @@ button.song-index:hover{ background: var(--bg-elevated-2); color: var(--accent);
 .view-prompter:fullscreen, .view-prompter:-webkit-full-screen{
   width:100vw; height:100vh; background: var(--bg-void);
 }
-.countdown-overlay{
-  position:absolute; inset:0; z-index:60;
-  display:flex; align-items:center; justify-content:center;
-  font-size:min(30vw, 180px); font-weight:900; color: var(--accent);
-  background: rgba(10,11,15,.6);
-  font-family: var(--font-ui);
-  pointer-events:none;
-  animation: view-fade .15s ease;
-}
 
 .prompter-header{
   flex:0 0 auto;
@@ -674,6 +664,15 @@ button.song-index:hover{ background: var(--bg-elevated-2); color: var(--accent);
   max-width: 1000px;
   margin:0 auto;
 }
+
+/* Titre et artiste en tête de chaque chanson, dans le texte qui défile : ils partent avec les paroles. */
+.song-heading{
+  margin:0 0 .75em; padding-bottom:.5em;
+  border-bottom:1px solid var(--line);
+  font-family: var(--font-ui); line-height:1.25;
+}
+.song-heading-title{ font-size:1.2em; font-weight:800; overflow-wrap:anywhere; }
+.song-heading-artist{ margin-top:.25em; font-size:.66em; font-weight:700; color: var(--text-muted); letter-spacing:.02em; overflow-wrap:anywhere; }
 
 .song-line{ position:relative; }
 .lyric-row{ white-space:pre-wrap; overflow-wrap:break-word; color: var(--text-primary); }
@@ -869,7 +868,7 @@ kbd{
      simplement ignorées et la page s'imprime sans pied de page. */
   @page{
     margin: 1.4cm 1.4cm 1.9cm;
-    @bottom-left{ content: "SetList"; font-family: sans-serif; font-size: 8pt; color: #888; }
+    @bottom-left{ content: "MusicApp"; font-family: sans-serif; font-size: 8pt; color: #888; }
     @bottom-right{ content: counter(page) " / " counter(pages); font-family: sans-serif; font-size: 8pt; color: #888; }
   }
   html, body{ height:auto !important; overflow:visible !important; background:#fff !important; }
@@ -931,7 +930,7 @@ kbd{
   <header class="topbar" id="topbar">
     <div class="topbar-brand">
       <span class="brand-mark" data-icon="spotlight"></span>
-      <span class="brand-name">SetList<span class="brand-accent">.</span></span>
+      <span class="brand-name">MusicApp</span>
     </div>
     <nav class="topbar-actions">
       <button class="icon-btn" id="btnHelp" aria-label="Aide" title="Aide">
@@ -1128,7 +1127,6 @@ kbd{
     <div class="prompter-scroll" id="prompterScroll">
       <div class="prompter-content" id="prompterContent"></div>
     </div>
-    <div id="countdownOverlay" class="countdown-overlay" hidden></div>
 
     <footer class="prompter-controls">
       <div class="control-group">
@@ -1259,7 +1257,7 @@ kbd{
       </ul>
       <h4>Au prompteur</h4>
       <ul>
-        <li><kbd>Espace</kbd> démarre ou arrête le défilement (décompte de 3 s au départ ; un second appui l'annule).</li>
+        <li><kbd>Espace</kbd> démarre ou arrête le défilement (le texte se met en mouvement tout de suite).</li>
         <li><kbd>←</kbd> <kbd>→</kbd> chanson précédente ou suivante, <kbd>↑</kbd> <kbd>↓</kbd> défilement à la main.</li>
         <li><kbd>F</kbd> plein écran, <kbd>Échap</kbd> retour à la bibliothèque.</li>
         <li>Une pédale Bluetooth qui envoie ces touches fonctionne sans réglage.</li>
@@ -1300,6 +1298,7 @@ kbd{
    CONSTANTES
    ========================================================================= */
 
+// Anciens noms conservés volontairement : renommer une clé de stockage ferait « disparaître » les données déjà enregistrées.
 const STORAGE_KEY = 'setlist_prompteur_v1';
 
 const ICON = {
@@ -1502,7 +1501,7 @@ function seedDemoData(){
   const song = {
     id: uid('song'),
     title: 'Chanson de démonstration',
-    artist: 'SetList',
+    artist: 'MusicApp',
     style: '',
     singers: '',
     instruments: ['guitare'],
@@ -2261,8 +2260,6 @@ const UI = {
     rafId: null,
     lastFrameTime: null,
     scrollRemainder: 0,
-    countdownTimeout: null,
-    countdownActive: false,
   },
 };
 
@@ -3309,6 +3306,14 @@ function getPrompterNavList(){
   return Store.state.songs.map(s => s.id);
 }
 
+// Bloc « titre + artiste » placé avant la première ligne des paroles (l'en-tête fixe de l'écran ne défile pas).
+function songHeadingHTML(song){
+  return '<div class="song-heading">' +
+    '<div class="song-heading-title">' + escapeHTML(song.title) + '</div>' +
+    (song.artist ? '<div class="song-heading-artist">' + escapeHTML(song.artist) + '</div>' : '') +
+    '</div>';
+}
+
 function renderPrompterSong(){
   const song = Store.getSong(UI.prompter.songId);
   if (!song){ showView('library'); return; }
@@ -3329,7 +3334,7 @@ function renderPrompterSong(){
   document.getElementById('fontValue').textContent = fontSize;
   document.getElementById('prompterContent').style.setProperty('--prompter-font-size', fontSize + 'px');
 
-  document.getElementById('prompterContent').innerHTML = renderSongHTML(song.content, {
+  document.getElementById('prompterContent').innerHTML = songHeadingHTML(song) + renderSongHTML(song.content, {
     transpose,
     preferFlat: false,
   });
@@ -3355,38 +3360,6 @@ function renderPrompterSong(){
 }
 
 /* ---- défilement automatique ---- */
-
-function cancelCountdown(){
-  if (UI.prompter.countdownTimeout){
-    clearTimeout(UI.prompter.countdownTimeout);
-    UI.prompter.countdownTimeout = null;
-  }
-  UI.prompter.countdownActive = false;
-  const overlay = document.getElementById('countdownOverlay');
-  if (overlay) overlay.hidden = true;
-}
-
-function startAutoscrollWithCountdown(){
-  const overlay = document.getElementById('countdownOverlay');
-  UI.prompter.countdownActive = true;
-  updatePlayButtonUI();
-  let count = 3;
-  overlay.textContent = count;
-  overlay.hidden = false;
-  const tick = () => {
-    count--;
-    if (count <= 0){
-      overlay.hidden = true;
-      UI.prompter.countdownActive = false;
-      UI.prompter.countdownTimeout = null;
-      startAutoscroll();
-      return;
-    }
-    overlay.textContent = count;
-    UI.prompter.countdownTimeout = setTimeout(tick, 1000);
-  };
-  UI.prompter.countdownTimeout = setTimeout(tick, 1000);
-}
 
 function startAutoscroll(){
   UI.prompter.isPlaying = true;
@@ -3435,12 +3408,11 @@ function pauseAutoscroll(){
   updatePlayButtonUI();
 }
 function toggleAutoscroll(){
-  if (UI.prompter.countdownActive){ cancelCountdown(); updatePlayButtonUI(); return; }
-  if (UI.prompter.isPlaying) pauseAutoscroll(); else startAutoscrollWithCountdown();
+  if (UI.prompter.isPlaying) pauseAutoscroll(); else startAutoscroll();
 }
 function updatePlayButtonUI(){
   const btn = document.getElementById('btnPlayPause');
-  const active = UI.prompter.isPlaying || UI.prompter.countdownActive;
+  const active = UI.prompter.isPlaying;
   btn.innerHTML = active ? ICON.pause : ICON.play;
   btn.classList.toggle('is-playing', active);
   btn.setAttribute('aria-label', active ? 'Arrêter' : 'Démarrer le défilement');
@@ -3512,7 +3484,6 @@ function navigatePrompter(direction){
   const idx = navList.indexOf(UI.prompter.songId);
   const newIdx = idx + direction;
   if (newIdx < 0 || newIdx >= navList.length) return;
-  cancelCountdown();
   pauseAutoscroll();
   UI.prompter.songId = navList[newIdx];
   renderPrompterSong();
@@ -3521,12 +3492,10 @@ function navigatePrompter(direction){
 document.getElementById('btnPrevSong').addEventListener('click', () => navigatePrompter(-1));
 document.getElementById('btnNextSong').addEventListener('click', () => navigatePrompter(1));
 document.getElementById('btnPrompterBack').addEventListener('click', () => {
-  cancelCountdown();
   pauseAutoscroll();
   showView('library');
 });
 document.getElementById('btnPrompterEdit').addEventListener('click', () => {
-  cancelCountdown();
   pauseAutoscroll();
   openEditor(UI.prompter.songId, 'prompter');
 });
@@ -3615,7 +3584,7 @@ document.getElementById('btnExportData').addEventListener('click', () => {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = 'setlist-sauvegarde-' + new Date().toISOString().slice(0, 10) + '.json';
+  a.download = 'musicapp-sauvegarde-' + new Date().toISOString().slice(0, 10) + '.json';
   document.body.appendChild(a);
   a.click();
   a.remove();
@@ -3636,7 +3605,7 @@ document.getElementById('btnImportData').addEventListener('click', () => {
    ========================================================================= */
 
 const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.file';
-const DRIVE_CLIENT_ID_KEY = 'setlist_drive_client_id';
+const DRIVE_CLIENT_ID_KEY = 'setlist_drive_client_id'; // ancien nom conservé (voir STORAGE_KEY)
 
 const Drive = {
   accessToken: null,
@@ -3711,7 +3680,7 @@ const Drive = {
 
   async uploadBackup(filename, contentString){
     await this.ensureToken();
-    const boundary = '----setlist' + Date.now();
+    const boundary = '----musicapp' + Date.now();
     const metadata = { name: filename, mimeType: 'application/json' };
     const body =
       '--' + boundary + '\r\n' +
@@ -3781,7 +3750,7 @@ async function driveBackupNow(){
   const status = document.getElementById('driveStatus');
   try {
     status.textContent = 'Envoi en cours…';
-    const filename = 'setlist-sauvegarde-' + new Date().toISOString().slice(0, 10) + '.json';
+    const filename = 'musicapp-sauvegarde-' + new Date().toISOString().slice(0, 10) + '.json';
     await Drive.uploadBackup(filename, JSON.stringify(Store.state, null, 2));
     Store.state.settings.lastExportAt = Date.now();
     Store.save();
