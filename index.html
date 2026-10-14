@@ -7,6 +7,10 @@
 <meta name="description" content="Prompteur hors-ligne pour musiciens : paroles, accords, transposition, playlists.">
 <meta name="color-scheme" content="dark">
 <meta name="theme-color" content="#0A0B0F">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="MusicApp">
 <style>
 /* =========================================================================
    MUSICAPP — Prompteur pour musiciens
@@ -20,7 +24,7 @@
    pour leur mise en page ; sans cette règle, une déclaration d'auteur peut
    l'emporter sur la feuille de style par défaut du navigateur). */
 [hidden]{ display:none !important; }
-html, body { height: 100%; }
+html, body { height: 100%; overscroll-behavior: none; }
 
 :root{
   /* --- Palette : scène plongée dans le noir + veilleuse ambre de pupitre --- */
@@ -355,6 +359,27 @@ input, textarea, select{ font-family: inherit; color: inherit; }
 .reorder-buttons button:disabled{ opacity:.25; pointer-events:none; }
 .reorder-buttons svg{ width:12px; height:12px; }
 
+/* Poignée de glisser-déposer : seule zone qui capte le geste (le reste de la ligne continue de faire défiler la liste au doigt) */
+.drag-handle{
+  flex:0 0 auto; width:30px; height:44px; margin:-8px -6px -8px -8px; padding:0; border:none; border-radius:8px;
+  background:transparent; color: var(--text-faint); cursor:grab;
+  display:flex; align-items:center; justify-content:center;
+  touch-action:none; -webkit-user-select:none; user-select:none; -webkit-touch-callout:none; -webkit-tap-highlight-color:transparent;
+}
+.drag-handle svg{ width:16px; height:16px; }
+.drag-handle:hover, .drag-handle:focus-visible{ background: var(--bg-elevated-2); color: var(--text-primary); }
+.song-list.select-mode .drag-handle{ display:none; }
+.song-list.is-sorting{ -webkit-user-select:none; user-select:none; }
+.song-list.is-sorting .song-row{ transition: transform .16s ease, border-color .15s ease, background .15s ease; }
+.song-row.is-dragging{
+  position:relative; z-index:5; transition:none !important; cursor:grabbing;
+  background: var(--bg-elevated); border-color: var(--accent);
+  box-shadow: 0 14px 30px rgba(0,0,0,.55);
+}
+.song-row.is-dragging .drag-handle{ color: var(--accent); cursor:grabbing; }
+body.is-row-dragging{ cursor:grabbing; }
+@media (prefers-reduced-motion: reduce){ .song-list.is-sorting .song-row{ transition:none; } }
+
 button.song-index{
   border:none; background:transparent; cursor:pointer; padding:5px 0; border-radius:8px;
   transition: background .15s ease, color .15s ease;
@@ -540,12 +565,17 @@ button.song-index:hover{ background: var(--bg-elevated-2); color: var(--accent);
 }
 .field{ display:flex; flex-direction:column; gap:6px; }
 .field label{ font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:.06em; color: var(--text-muted); }
-.field input[type=text], .field select{
+.field input[type=text], .field input[type=number], .field select{
   height:46px; padding:0 14px; border-radius: var(--radius-sm);
   border:1px solid var(--line); background: var(--bg-panel); color: var(--text-primary);
   font-size:15px;
 }
-.field input[type=text]:focus, .field select:focus{ border-color: var(--accent); }
+.field input[type=text]:focus, .field input[type=number]:focus, .field select:focus{ border-color: var(--accent); }
+.tempo-row{ display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+.tempo-row input[type=number]{ width:104px; }
+.tempo-row select{ width:150px; }
+.tempo-row .chip-btn{ min-height:46px; }
+.chip-btn.is-beat{ background: var(--accent-soft-2); border-color: var(--accent); color: var(--accent); }
 #capoSuggestion:empty{ display:block; min-height:1.6em; }
 .field-wide{ grid-column: 1 / -1; }
 
@@ -628,9 +658,8 @@ button.song-index:hover{ background: var(--bg-elevated-2); color: var(--accent);
   background: var(--bg-void);
   height:100%;
 }
-.view-prompter:fullscreen, .view-prompter:-webkit-full-screen{
-  width:100vw; height:100vh; background: var(--bg-void);
-}
+/* C'est la page entière qui passe en plein écran (fenêtres et notifications restent visibles) */
+html:fullscreen, html:-webkit-full-screen{ background: var(--bg-void); }
 
 .prompter-header{
   flex:0 0 auto;
@@ -650,12 +679,20 @@ button.song-index:hover{ background: var(--bg-elevated-2); color: var(--accent);
 #prompterArtist{ font-size:12.5px; color: var(--text-muted); }
 .prompter-singers{ font-size:12px; color: var(--accent); font-weight:700; }
 .prompter-key-readout{ font-size:12px; color: var(--text-faint); font-family: var(--font-mono); }
+.prompter-position{ flex:0 0 auto; font-size:12px; font-weight:700; color: var(--text-muted); font-family: var(--font-mono); white-space:nowrap; }
+.prompter-position:empty{ display:none; }
 .prompter-key-readout b{ color: var(--accent); font-weight:800; }
 
+.prompter-stage{ position:relative; flex:1 1 auto; min-height:0; display:flex; flex-direction:column; }
 .prompter-scroll{
   flex:1 1 auto; min-height:0; overflow-y:auto;
   padding: 34px clamp(18px, 5vw, 64px) 40vh;
   scroll-behavior: auto;
+  /* Tablette en plein écran : un geste qui déborde en haut ou en bas du texte ne doit pas être repris par le navigateur
+     (retour, rafraîchissement, sortie du plein écran). Seul le défilement vertical est laissé au système. */
+  overscroll-behavior: none;
+  touch-action: pan-y;
+  -webkit-overflow-scrolling: touch;
 }
 .prompter-content{
   font-family: var(--font-mono);
@@ -663,6 +700,8 @@ button.song-index:hover{ background: var(--bg-elevated-2); color: var(--accent);
   line-height: 2.15;
   max-width: 1000px;
   margin:0 auto;
+  /* un doigt qui s'attarde sur le texte ne doit ni sélectionner ni ouvrir de menu */
+  -webkit-user-select:none; user-select:none; -webkit-touch-callout:none;
 }
 
 /* Titre et artiste en tête de chaque chanson, dans le texte qui défile : ils partent avec les paroles. */
@@ -700,6 +739,9 @@ button.song-index:hover{ background: var(--bg-elevated-2); color: var(--accent);
   border-radius:4px;
 }
 
+/* Un accord se touche (prompteur) ou se clique (aperçu) : son doigté s'ouvre */
+#prompterContent .chord, #previewPane .chord{ cursor:pointer; }
+#prompterContent .chord:hover, #previewPane .chord:hover{ filter: brightness(1.3); text-decoration: underline; text-underline-offset: .12em; }
 .line-spacer{ height:.85em; }
 .chords-only-line{
   display:flex; flex-wrap:wrap; gap:.6em; margin: .5em 0;
@@ -762,7 +804,154 @@ button.song-index:hover{ background: var(--bg-elevated-2); color: var(--accent);
   0%,100%{ box-shadow: 0 0 0 0 var(--accent-soft-2); }
   50%{ box-shadow: 0 0 0 14px rgba(255,182,72,0); }
 }
-.nav-btn{ width:46px; height:46px; }
+.nav-btn{ width:50px; height:50px; }
+@media (pointer: coarse){ .nav-btn{ width:56px; height:56px; } }
+
+/* Précédent · Lecture · Suivant restent toujours ensemble, quelle que soit la largeur de l'écran */
+.transport{ display:flex; align-items:center; justify-content:center; gap:12px; flex:0 0 auto; }
+.metro-btn{
+  display:inline-flex; align-items:center; gap:6px; height:46px; padding:0 14px 0 11px;
+  border-radius: var(--radius-pill); border:1px solid var(--line); background: var(--bg-elevated);
+  color: var(--text-primary); font-family: var(--font-mono); font-size:14px; font-weight:800; cursor:pointer;
+}
+.metro-btn svg{ width:20px; height:20px; color: var(--accent); }
+.metro-btn:hover{ background: var(--bg-elevated-2); }
+.metro-btn.is-running{ border-color: var(--accent); }
+.metro-btn-label{ min-width:2ch; text-align:left; }
+.metro-pulse.flash{ opacity:1; transform: scale(1.35); }
+.metro-pulse.is-accent{ box-shadow: 0 0 0 4px var(--accent-soft-2); }
+
+/* Fenêtre du métronome */
+.modal-box.modal-metro{ max-width:460px; }
+.metro-song{ margin-bottom:12px !important; font-size:13px !important; }
+.metro-tempo{ display:flex; align-items:center; justify-content:center; gap:10px; margin:4px 0 12px; flex-wrap:wrap; }
+.metro-tempo .stepper-btn{ width:50px; height:50px; font-size:24px; background: var(--bg-elevated); }
+.modal-box .metro-tempo input[type=number]{
+  width:118px; height:62px; margin:0; padding:0 6px; text-align:center;
+  font-family: var(--font-mono); font-size:34px; font-weight:800;
+  border-radius: var(--radius-sm); border:1px solid var(--line);
+  background: var(--bg-elevated); color: var(--text-primary);
+}
+.modal-box .metro-tempo input[type=number]:focus{ border-color: var(--accent); outline:none; }
+.metro-unit{ font-size:12px; font-weight:800; letter-spacing:.08em; color: var(--text-muted); }
+.metro-sig-row{ display:flex; align-items:center; gap:10px; margin-bottom:12px; }
+.metro-sig-row label{ font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:.06em; color: var(--text-muted); }
+.metro-sig-row select{
+  flex:1; height:44px; padding:0 12px; border-radius: var(--radius-sm);
+  border:1px solid var(--line); background: var(--bg-elevated); color: var(--text-primary); font-size:15px;
+}
+.metro-beats{ display:flex; justify-content:center; gap:10px; margin:0 0 16px; min-height:22px; }
+.metro-dot{ width:18px; height:18px; border-radius:50%; background: var(--bg-elevated-2); border:1px solid var(--line); }
+.metro-dot.is-first{ border-color: var(--accent); }
+.metro-dot.on{ background: var(--accent); transform: scale(1.25); }
+.seg-group{ margin-bottom:14px; }
+.seg-label{ display:block; font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:.06em; color: var(--text-muted); margin-bottom:6px; }
+.seg-label small{ font-weight:600; text-transform:none; letter-spacing:0; }
+.segmented{ display:flex; border:1px solid var(--line); border-radius: var(--radius-sm); overflow:hidden; }
+.seg-btn{
+  flex:1 1 0; min-height:44px; padding:0 6px; border:none; border-right:1px solid var(--line);
+  background:transparent; color: var(--text-muted); font-size:14px; font-weight:700; cursor:pointer;
+}
+.seg-btn:last-child{ border-right:none; }
+.seg-btn:hover{ background: var(--bg-elevated); }
+.seg-btn[aria-pressed="true"]{ background: var(--accent-soft); color: var(--accent); }
+.metro-volume{ width:100%; height:34px; accent-color: var(--accent); }
+/* Fenêtre « accord » */
+.modal-box.modal-chord{ max-width:440px; }
+.chord-head{ display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:4px; }
+.chord-head h3{ font-size:30px !important; margin:0 !important; font-family: var(--font-mono); font-weight:800; color: var(--chord-color); }
+.chord-reading{ margin-bottom:4px !important; color: var(--accent) !important; font-weight:700; }
+.chord-notes{ margin-bottom:12px !important; }
+.chord-notes b{ font-family: var(--font-mono); }
+.chord-instrument{ margin-bottom:10px; }
+.chord-diagram{ display:flex; justify-content:center; margin:6px 0 4px; color: var(--text-primary); min-height:120px; }
+.chord-svg{ width:100%; max-width:290px; height:auto; display:block; }
+.chord-svg.chord-piano{ max-width:100%; }
+.svg-fret-num{ font-size:15px; font-weight:800; fill: var(--accent); font-family: var(--font-mono); }
+.svg-mute{ font-size:18px; font-weight:800; fill: var(--text-muted); }
+.svg-finger{ font-size:14px; font-weight:800; fill:#211404; font-family: var(--font-mono); }
+.svg-string{ font-size:12px; font-weight:700; fill: var(--text-muted); font-family: var(--font-mono); }
+.svg-key-label{ font-size:12px; font-weight:800; fill:#211404; font-family: var(--font-mono); }
+.svg-key-small{ font-size:9px; }
+.chord-variants{ display:flex; align-items:center; justify-content:center; gap:14px; margin:6px 0; font-size:13px; font-weight:700; color: var(--text-muted); }
+.chord-variants[hidden]{ display:none; }
+.chord-variants .chip-btn{ min-width:44px; min-height:40px; font-size:20px; }
+.chord-tab{ margin:4px 0 12px !important; text-align:center; white-space:pre; font-family: var(--font-mono); font-size:13px !important; color: var(--text-muted) !important; line-height:1.5 !important; }
+.chord-tab:empty{ display:none; }
+.chord-song[hidden]{ display:none; }
+.chord-chips{ display:flex; flex-wrap:wrap; gap:6px; }
+.chord-chip{
+  min-height:36px; padding:0 12px; border-radius: var(--radius-pill); border:1px solid var(--line);
+  background: var(--bg-elevated); color: var(--chord-color); font-family: var(--font-mono); font-size:14px; font-weight:800; cursor:pointer;
+}
+.chord-chip:hover{ background: var(--bg-elevated-2); }
+.chord-chip[aria-pressed="true"]{ background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
+.check-row{ display:flex; align-items:flex-start; gap:10px; font-size:14px; color: var(--text-primary); cursor:pointer; line-height:1.45; }
+.check-row input{ width:20px; height:20px; margin-top:1px; accent-color: var(--accent); flex:0 0 auto; }
+.check-row + .check-row{ margin-top:10px; }
+
+/* Partage d'une fiche : QR code, lien, import */
+.modal-box.modal-share{ max-width:560px; }
+.share-head{ display:flex; align-items:flex-start; justify-content:space-between; gap:12px; margin-bottom:8px; }
+.share-head h3{ margin-bottom:2px !important; }
+.share-head .hint{ margin:0 !important; font-size:13.5px; overflow-wrap:anywhere; }
+.share-qr{
+  background:#fff; border-radius: var(--radius-sm); padding:4px; margin:0 auto 8px;
+  width:min(100%, 58vh); aspect-ratio:1 / 1;
+  display:flex; align-items:center; justify-content:center; color:#222;
+}
+.qr-svg{ display:block; width:100%; height:auto; }
+.share-qr .hint, .share-qr .share-toolong{ margin:0 !important; padding:14px; color:#333 !important; font-size:14px !important; text-align:center; }
+.share-info{ margin-bottom:8px !important; font-size:12.5px !important; text-align:center; }
+.share-howto{ margin-bottom:12px !important; font-size:13.5px !important; }
+.modal-box .share-link-row{ display:flex; gap:8px; align-items:center; margin-bottom:10px; }
+.modal-box .share-link-row input[type=text]{ flex:1 1 auto; min-width:0; margin:0; height:42px; font-family: var(--font-mono); font-size:12.5px; }
+.share-link-row .btn{ flex:0 0 auto; }
+.share-native{ margin-bottom:6px; }
+.modal-box .share-base input[type=text]{ margin-bottom:6px; height:42px; font-size:13px; }
+.share-base .hint{ font-size:12.5px; margin-bottom:8px; }
+.share-preview{
+  display:flex; flex-direction:column; gap:3px; padding:12px 14px; margin-bottom:12px;
+  border:1px solid var(--line); border-radius: var(--radius-sm); background: var(--bg-elevated);
+}
+.share-preview .sp-title{ font-size:17px; font-weight:800; color: var(--text-primary); overflow-wrap:anywhere; }
+.share-preview .sp-artist{ color: var(--text-muted); font-size:14px; overflow-wrap:anywhere; }
+.share-preview .sp-artist:empty{ display:none; }
+.share-preview .sp-meta{ color: var(--text-faint); font-size:12.5px; }
+.share-preview .sp-excerpt{
+  margin:6px 0 0; padding:8px 10px; border-radius: var(--radius-sm); background: var(--bg-panel);
+  color: var(--text-muted); font-family: var(--font-mono); font-size:12.5px; line-height:1.5;
+  white-space:pre-wrap; overflow-wrap:anywhere; max-height:132px; overflow:hidden;
+}
+.modal-share-import .hint{ margin-bottom:16px; }
+.modal-actions.is-wrap{ flex-wrap:wrap; }
+.modal-actions.is-wrap .btn{ flex:1 1 auto; }
+.modal-box.modal-scan{ max-width:460px; }
+#scanVideo{ display:block; width:100%; aspect-ratio:4 / 3; object-fit:cover; background:#000; border-radius: var(--radius-sm); margin-bottom:10px; }
+@media (min-width: 760px) and (orientation: landscape){
+  .modal-box.modal-share{ max-width:880px; }
+  .share-body{ display:grid; grid-template-columns: minmax(0, 1fr) minmax(0, 340px); gap:0 24px; align-items:start; }
+  .share-qr{ width:min(100%, 62vh); }
+}
+@media (max-width: 640px){
+  #modalShare{ padding:8px; }
+  .modal-box.modal-share{ padding:14px; }
+}
+
+/* Pulseur du métronome : un petit disque ambre dans le coin du texte, discret mais visible de loin */
+.metro-pulse{
+  position:absolute; top:10px; right:12px; z-index:5;
+  width:26px; height:26px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  background: var(--accent); color:#211404;
+  font-family: var(--font-mono); font-size:13px; font-weight:800; line-height:1;
+  opacity:.3; pointer-events:none;
+}
+.metro-pulse.is-countin{ width:48px; height:48px; font-size:24px; top:12px; right:14px; opacity:.9; }
+@media (max-width: 940px){
+  .prompter-controls > .control-group{ order:1; }
+  .prompter-controls > .transport{ order:2; flex:1 1 100%; }
+}
 
 @media (max-width: 640px){
   .prompter-controls{ gap:6px; }
@@ -774,7 +963,9 @@ button.song-index:hover{ background: var(--bg-elevated-2); color: var(--accent);
   .prompter-header .instrument-tag{ padding:4px 6px; gap:0; }
   .prompter-header .instrument-tag .tag-text{ display:none; }
   .prompter-key-readout{ display:none; }
+  .prompter-position{ font-size:11px; }
   .prompter-scroll{ padding: 22px 16px 40vh; }
+  .metro-btn{ padding:0 11px 0 9px; }
 }
 
 /* ================= MODALS ================= */
@@ -814,12 +1005,12 @@ button.song-index:hover{ background: var(--bg-elevated-2); color: var(--accent);
   color: var(--text-muted); margin-bottom:10px; display:block;
 }
 .settings-export-row{ display:flex; gap:10px; }
-#driveClientId{
+#driveClientId, #optShareBase{
   width:100%; height:42px; padding:0 12px; margin-bottom:8px;
   border-radius: var(--radius-sm); border:1px solid var(--line);
   background: var(--bg-elevated); color: var(--text-primary); font-size:13px;
 }
-#driveClientId:focus{ border-color: var(--accent); }
+#driveClientId:focus, #optShareBase:focus{ border-color: var(--accent); }
 #driveStatus{ margin-top:10px; }
 .settings-export-row .btn{ flex:1; }
 
@@ -844,6 +1035,8 @@ button.song-index:hover{ background: var(--bg-elevated-2); color: var(--accent);
 }
 .toast-action:hover{ background: var(--accent-soft); }
 body.select-active .toast-container{ padding-bottom: calc(96px + var(--safe-bottom)); }
+/* au prompteur, les notifications se posent au-dessus de la barre de commandes */
+body[data-view="prompter"] .toast-container{ padding-bottom: calc(150px + var(--safe-bottom)); }
 .toast.toast-danger{ border-color: var(--danger); color: var(--danger-hover); }
 @keyframes toast-in{ from{ opacity:0; transform: translateY(8px); } to{ opacity:1; transform:none; } }
 
@@ -1062,6 +1255,16 @@ kbd{
           </select>
           <p id="capoSuggestion" class="hint hint-accent"></p>
         </div>
+        <div class="field">
+          <label for="inputBpm">Tempo et mesure (optionnels)</label>
+          <div class="tempo-row">
+            <input type="number" id="inputBpm" inputmode="numeric" min="30" max="300" step="1" placeholder="BPM" aria-label="Tempo en battements par minute (BPM)">
+            <select id="inputTimeSig" aria-label="Mesure"></select>
+            <button type="button" class="chip-btn" id="btnTapTempo" title="Tapez en rythme plusieurs fois : le tempo se calcule tout seul">Frapper</button>
+            <button type="button" class="chip-btn" id="btnEditorMetro" title="Écouter le tempo réglé">&#9654; Écouter</button>
+          </div>
+          <p class="hint" id="tempoHint">BPM = temps par minute (noires pointées pour 6/8, 9/8 et 12/8). Sert au métronome et au décompte du prompteur.</p>
+        </div>
         <div class="field field-wide">
           <label id="instrumentLabel">Instruments prévus (un ou plusieurs)</label>
           <div class="instrument-picker" id="instrumentPicker" role="group" aria-labelledby="instrumentLabel"></div>
@@ -1119,13 +1322,18 @@ kbd{
         <span id="prompterArtist"></span>
         <span id="prompterSingers" class="prompter-singers"></span>
       </div>
+      <div class="prompter-position" id="prompterPosition" title="Position dans la liste"></div>
       <div class="prompter-key-readout" id="prompterKeyReadout"></div>
+      <button class="icon-btn" id="btnPrompterShare" aria-label="Partager cette fiche (QR code, lien)" title="Partager cette fiche (QR code, lien)"><span data-icon="qr"></span></button>
       <button class="icon-btn" id="btnPrompterEdit" aria-label="Modifier les paroles et accords" title="Modifier les paroles et accords"><span data-icon="pencil"></span></button>
       <button class="icon-btn" id="btnPrompterFullscreen" aria-label="Plein écran"><span data-icon="expand"></span></button>
     </header>
 
-    <div class="prompter-scroll" id="prompterScroll">
-      <div class="prompter-content" id="prompterContent"></div>
+    <div class="prompter-stage">
+      <div class="prompter-scroll" id="prompterScroll">
+        <div class="prompter-content" id="prompterContent"></div>
+      </div>
+      <div class="metro-pulse" id="metroPulse" hidden aria-hidden="true"><span id="metroPulseNum">1</span></div>
     </div>
 
     <footer class="prompter-controls">
@@ -1147,9 +1355,12 @@ kbd{
         <span class="stepper-value" id="capoValue">0</span>
         <button class="stepper-btn" data-action="capo-up" aria-label="Transposer vers le haut">+</button>
       </div>
-      <button class="icon-btn nav-btn" id="btnPrevSong" aria-label="Chanson précédente"><span data-icon="skipback"></span></button>
-      <button class="play-btn" id="btnPlayPause" aria-label="Lecture / Pause"><span data-icon="play"></span></button>
-      <button class="icon-btn nav-btn" id="btnNextSong" aria-label="Chanson suivante"><span data-icon="skipfwd"></span></button>
+      <div class="transport" role="group" aria-label="Lecture et changement de chanson">
+        <button class="metro-btn" id="btnMetronome" type="button" aria-label="Métronome" title="Métronome : tempo, mesure, décompte"><span data-icon="metronome"></span><span class="metro-btn-label" id="metroBtnLabel">—</span></button>
+        <button class="icon-btn nav-btn" id="btnPrevSong" aria-label="Chanson précédente"><span data-icon="skipback"></span></button>
+        <button class="play-btn" id="btnPlayPause" aria-label="Lecture / Pause"><span data-icon="play"></span></button>
+        <button class="icon-btn nav-btn" id="btnNextSong" aria-label="Chanson suivante"><span data-icon="skipfwd"></span></button>
+      </div>
     </footer>
   </section>
 
@@ -1194,6 +1405,11 @@ kbd{
   <div class="modal-box modal-wide">
     <h3>Réglages</h3>
     <div class="settings-section">
+      <span class="s-label">Prompteur</span>
+      <label class="check-row"><input type="checkbox" id="optChordDiagrams"><span>Accords cliquables : toucher un accord affiche son doigté (guitare, piano)</span></label>
+      <label class="check-row"><input type="checkbox" id="optSwipeNav"><span>Changer de chanson en balayant le texte vers la gauche ou la droite (tablette)</span></label>
+    </div>
+    <div class="settings-section">
       <span class="s-label">Sauvegarde des données</span>
       <div class="settings-export-row">
         <button class="btn btn-ghost btn-sm" id="btnExportData">Exporter (.json)</button>
@@ -1201,6 +1417,17 @@ kbd{
       </div>
       <p id="lastExportInfo" class="hint hint-spaced"></p>
       <input type="file" id="importFileInput" accept="application/json,.json,.ezp,.cho,.pro,.chopro,.crd,.txt" hidden>
+    </div>
+
+    <div class="settings-section">
+      <span class="s-label">Partage entre musiciens</span>
+      <div class="settings-export-row">
+        <button class="btn btn-ghost btn-sm" id="btnScanQr">Scanner un QR code</button>
+        <button class="btn btn-ghost btn-sm" id="btnPasteLink">Coller un lien</button>
+      </div>
+      <p class="hint hint-spaced">Pour envoyer une fiche, touchez l'icône QR code d'une chanson. Pour en recevoir une : visez son code avec l'appareil photo, ou utilisez ces deux boutons.</p>
+      <input type="text" id="optShareBase" placeholder="Adresse de MusicApp pour les liens (https://…)" autocomplete="off" spellcheck="false" inputmode="url" aria-label="Adresse publique de MusicApp utilisée dans les liens de partage">
+      <p class="hint">Facultatif. Détectée toute seule quand l'appli est ouverte depuis son adresse https ; à renseigner si vous l'ouvrez depuis un fichier.</p>
     </div>
 
     <div class="settings-section">
@@ -1244,6 +1471,135 @@ kbd{
   </div>
 </div>
 
+<div class="modal-overlay" id="modalChord" hidden>
+  <div class="modal-box modal-chord" role="dialog" aria-modal="true" aria-labelledby="chordTitle">
+    <div class="chord-head">
+      <h3 id="chordTitle">—</h3>
+      <button class="icon-btn" id="btnCloseChord" aria-label="Fermer"><span data-icon="close"></span></button>
+    </div>
+    <p class="hint chord-reading" id="chordReading"></p>
+    <p class="hint chord-notes" id="chordNotes"></p>
+    <div class="segmented chord-instrument" id="chordInstrument" role="group" aria-label="Instrument">
+      <button type="button" class="seg-btn" data-chord-view="guitar" aria-pressed="true">Guitare</button>
+      <button type="button" class="seg-btn" data-chord-view="piano" aria-pressed="false">Piano</button>
+    </div>
+    <div class="chord-diagram" id="chordDiagram"></div>
+    <div class="chord-variants" id="chordVariants">
+      <button type="button" class="chip-btn" id="btnChordPrev" aria-label="Position précédente">&#8249;</button>
+      <span id="chordVariantLabel">Position 1 / 1</span>
+      <button type="button" class="chip-btn" id="btnChordNext" aria-label="Position suivante">&#8250;</button>
+    </div>
+    <p class="chord-tab" id="chordTab"></p>
+    <div class="chord-song" id="chordSongBlock">
+      <span class="seg-label">Accords de la chanson</span>
+      <div class="chord-chips" id="chordChips"></div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modalShare" hidden>
+  <div class="modal-box modal-share" role="dialog" aria-modal="true" aria-labelledby="shareTitle">
+    <div class="share-head">
+      <div>
+        <h3 id="shareTitle">Partager cette fiche</h3>
+        <p class="hint" id="shareSubtitle"></p>
+      </div>
+      <button class="icon-btn" id="btnCloseShare" aria-label="Fermer"><span data-icon="close"></span></button>
+    </div>
+    <div class="share-body">
+      <div class="share-qr-col">
+        <div class="share-qr" id="shareQr" aria-live="polite"></div>
+        <p class="hint share-info" id="shareInfo"></p>
+      </div>
+      <div class="share-text-col">
+        <p class="hint share-howto" id="shareHowto"></p>
+        <label class="seg-label" for="shareLinkInput" id="shareLinkLabel">Lien direct</label>
+        <div class="share-link-row">
+          <input type="text" id="shareLinkInput" readonly spellcheck="false" autocomplete="off">
+          <button class="btn btn-ghost btn-sm" id="btnShareCopy">Copier</button>
+        </div>
+        <button class="btn btn-ghost btn-sm share-native" id="btnShareNative" hidden>Envoyer par message, AirDrop…</button>
+        <details class="hint-details share-base" id="shareBaseBlock">
+          <summary>Adresse de MusicApp utilisée dans le lien</summary>
+          <p class="hint">Adresse publique où MusicApp est hébergée (https://…). Elle est enregistrée sur cet appareil et sert à fabriquer le lien : l'appareil photo de l'autre tablette ouvre alors directement l'appli. Laissez vide si MusicApp est ouverte depuis un fichier.</p>
+          <input type="text" id="shareBaseInput" placeholder="https://…" autocomplete="off" spellcheck="false" inputmode="url" aria-label="Adresse publique de MusicApp">
+        </details>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modalShareImport" hidden>
+  <div class="modal-box modal-share-import" role="dialog" aria-modal="true" aria-labelledby="shareImportTitle">
+    <h3 id="shareImportTitle">Fiche reçue</h3>
+    <div class="share-preview" id="shareImportPreview"></div>
+    <p class="hint" id="shareImportNote"></p>
+    <div class="modal-actions is-wrap">
+      <button class="btn btn-ghost" id="btnShareImportCancel">Annuler</button>
+      <button class="btn btn-ghost" id="btnShareImportReplace" hidden>Remplacer la mienne</button>
+      <button class="btn btn-accent" id="btnShareImportAdd">Importer</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modalScan" hidden>
+  <div class="modal-box modal-scan" role="dialog" aria-modal="true" aria-labelledby="scanTitle">
+    <h3 id="scanTitle">Scanner un QR code</h3>
+    <video id="scanVideo" playsinline muted></video>
+    <p class="hint" id="scanStatus"></p>
+    <div class="modal-actions">
+      <button class="btn btn-accent" id="btnScanClose">Fermer</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modalMetronome" hidden>
+  <div class="modal-box modal-metro" role="dialog" aria-modal="true" aria-labelledby="metroTitle">
+    <h3 id="metroTitle">Métronome</h3>
+    <p class="hint metro-song" id="metroSongName"></p>
+    <div class="metro-tempo">
+      <button type="button" class="stepper-btn" id="btnMetroDown" aria-label="Ralentir d'un battement par minute">−</button>
+      <input type="number" id="metroBpm" inputmode="numeric" min="30" max="300" step="1" placeholder="—" aria-label="Tempo en battements par minute">
+      <button type="button" class="stepper-btn" id="btnMetroUp" aria-label="Accélérer d'un battement par minute">+</button>
+      <span class="metro-unit">BPM</span>
+      <button type="button" class="chip-btn" id="btnMetroTap" title="Tapez en rythme plusieurs fois : le tempo se calcule tout seul">Frapper</button>
+    </div>
+    <div class="metro-sig-row">
+      <label for="metroTimeSig">Mesure</label>
+      <select id="metroTimeSig"></select>
+    </div>
+    <div class="metro-beats" id="metroBeats" aria-hidden="true"></div>
+
+    <div class="seg-group">
+      <span class="seg-label">Décompte avant le départ <small>(une mesure, puis le texte défile)</small></span>
+      <div class="segmented" role="group" aria-label="Décompte avant le départ" data-metro-setting="countIn">
+        <button type="button" class="seg-btn" data-value="off">Sans</button>
+        <button type="button" class="seg-btn" data-value="visual">Visuel</button>
+        <button type="button" class="seg-btn" data-value="sound">Sonore</button>
+        <button type="button" class="seg-btn" data-value="both">Les deux</button>
+      </div>
+    </div>
+    <div class="seg-group">
+      <span class="seg-label">Pendant le morceau</span>
+      <div class="segmented" role="group" aria-label="Métronome pendant le morceau" data-metro-setting="during">
+        <button type="button" class="seg-btn" data-value="off">Aucun</button>
+        <button type="button" class="seg-btn" data-value="visual">Pulseur</button>
+        <button type="button" class="seg-btn" data-value="sound">Clic</button>
+        <button type="button" class="seg-btn" data-value="both">Les deux</button>
+      </div>
+    </div>
+    <div class="seg-group">
+      <label class="seg-label" for="metroVolume">Volume du clic</label>
+      <input type="range" class="metro-volume" id="metroVolume" min="0.1" max="1" step="0.05">
+    </div>
+    <p class="hint">Le tempo et la mesure sont enregistrés dans la fiche de la chanson ; le décompte, le pulseur et le volume valent pour toutes les chansons. Sur iPhone, le commutateur « silence » coupe le clic.</p>
+    <div class="modal-actions" style="margin-top:14px;">
+      <button class="btn btn-ghost" id="btnMetroTest">&#9654; Tester</button>
+      <button class="btn btn-accent" id="btnCloseMetronome">Fermer</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal-overlay" id="modalHelp" hidden>
   <div class="modal-box modal-help">
     <h3>Aide</h3>
@@ -1255,19 +1611,46 @@ kbd{
         <li>Repère de section : une ligne seule <code>{c: Refrain}</code>.</li>
         <li>Une ligne qui commence par <code>#</code> est un commentaire, invisible sur scène.</li>
       </ul>
+      <h4>Accords cliquables</h4>
+      <ul>
+        <li>Au prompteur comme dans l'aperçu de l'éditeur, <b>touchez un accord</b> (Am7, D/F#, G(sus4)…) : une fenêtre affiche son doigté à la <b>guitare</b> (grille, doigts, barré, plusieurs positions) ou au <b>piano</b> (touches à jouer, basse d'un accord renversé). Elle propose aussi tous les accords de la chanson, pour passer de l'un à l'autre.</li>
+        <li>Les doigtés sont calculés à partir des notes de l'accord et vérifiés : la note la plus grave est la fondamentale (ou la basse indiquée). Ce sont des propositions faciles à jouer ; d'autres existent.</li>
+        <li>Notations françaises comprises : <code>A4</code> = La sus4, <code>F2</code> = Fa sus2, <code>G7M</code> = Sol septième majeure, <code>C+</code> = Do augmenté.</li>
+        <li>Toucher un accord met le défilement en pause. Pour désactiver ce comportement (scène, tablette tenue à la main) : Réglages → Prompteur.</li>
+      </ul>
+      <h4>Partager une fiche avec un autre musicien</h4>
+      <ul>
+        <li>L'icône <b>QR code</b> (au prompteur, dans la liste, ou dans le menu ⋯ d'une chanson) affiche un <b>QR code</b> et un <b>lien</b> : titre, artiste, tonalité, tempo, mesure, paroles et accords. Tout est fabriqué sur l'appareil, sans Internet ni service en ligne. Votre transposition personnelle n'est pas transmise.</li>
+        <li>Sur l'autre tablette ou téléphone, ouvrez l'<b>appareil photo</b> et visez le code : quand l'appli est hébergée en https, MusicApp s'ouvre et propose la fiche. Rien n'est ajouté sans accord ; si une chanson de même titre existe déjà, vous choisissez entre la remplacer et en garder une copie.</li>
+        <li>Le lien, lui, se copie ou s'envoie (message, AirDrop…). Le destinataire peut aussi le coller dans <b>Réglages → Coller un lien</b>.</li>
+        <li>Si l'appli est ouverte depuis un fichier, le code ne contient que la fiche : il se lit avec <b>Réglages → Scanner un QR code</b> (réservé aux navigateurs qui savent lire les QR codes, comme Chrome sur Android ; l'appareil photo ordinaire n'afficherait que du texte). Indiquer l'adresse publique de MusicApp dans les Réglages ou dans la fenêtre de partage donne un code que l'appareil photo ouvre directement.</li>
+        <li>Une fiche très longue ne tient pas toujours dans un QR code : le lien reste alors disponible. Plus le code est dense, plus il faut le présenter de près, écran bien lumineux.</li>
+        <li><b>iPad / iPhone</b> : si MusicApp est installée sur l'écran d'accueil, l'appareil photo ouvre le lien dans Safari, dont les données sont séparées de celles de l'icône. Copiez alors le lien (appui long) et collez-le dans l'appli de l'écran d'accueil : Réglages → Coller un lien.</li>
+      </ul>
+      <h4>Tempo, métronome et décompte</h4>
+      <ul>
+        <li>Dans l'éditeur, renseignez le <b>tempo (BPM)</b> et la <b>mesure</b> (4/4, 3/4, 6/8…). « Frapper » mesure le tempo à la volée : tapez en rythme quatre fois ou plus. « Écouter » joue le clic.</li>
+        <li>Au prompteur, le bouton <b>métronome</b> (à gauche de précédent / lecture / suivant) ouvre les réglages : décompte d'une mesure avant le départ (visuel, sonore ou les deux), puis pulseur ambre dans le coin de l'écran et/ou clic pendant le morceau.</li>
+        <li>Avec un décompte, le texte démarre exactement sur le premier temps qui suit la mesure de décompte. Un toucher sur le texte, Espace ou « précédente / suivante » annule le décompte.</li>
+        <li>Sans tempo renseigné pour une chanson, elle démarre tout de suite, sans décompte ni pulseur.</li>
+      </ul>
       <h4>Au prompteur</h4>
       <ul>
         <li><kbd>Espace</kbd> démarre ou arrête le défilement (le texte se met en mouvement tout de suite).</li>
         <li><kbd>←</kbd> <kbd>→</kbd> chanson précédente ou suivante, <kbd>↑</kbd> <kbd>↓</kbd> défilement à la main.</li>
+        <li><kbd>Page ↓</kbd> <kbd>Page ↑</kbd> défilement d'un écran (pédales tourne-pages).</li>
         <li><kbd>F</kbd> plein écran, <kbd>Échap</kbd> retour à la bibliothèque.</li>
         <li>Une pédale Bluetooth qui envoie ces touches fonctionne sans réglage.</li>
+        <li><b>Précédente / Suivante</b> (de part et d'autre du bouton de lecture) suivent la liste affichée : l'ordre de la playlist ouverte, ou la bibliothèque telle que vous l'avez triée ou filtrée. Le numéro, en haut, indique votre place dans la liste.</li>
+        <li><b>Plein écran sur tablette</b> : sur iPad, le système peut quitter le plein écran pendant un défilement au doigt ; un bouton « Rétablir » apparaît alors. Pour un plein écran sans aucune interruption, ajoutez l'application à l'écran d'accueil (Safari : Partager → Sur l'écran d'accueil), elle s'ouvre ensuite sans barre de navigateur.</li>
+        <li><b>Vitesse − / +</b> : 10 crans, chacun 25 % plus rapide que le précédent. Le cran 5 convient à une chanson moyenne (environ 4 minutes) ; la vitesse suit la taille du texte, donc agrandir les caractères ne change pas la durée du défilement.</li>
         <li><b>Capo − / +</b> transpose en direct de −12 à +12 demi-tons, sans modifier le texte enregistré. Renseignez la tonalité d'origine pour obtenir une suggestion de capodastre.</li>
       </ul>
       <h4>Bibliothèque</h4>
       <ul>
         <li>La recherche porte sur le titre, l'artiste, le style, les chanteurs, la tonalité et les instruments (plusieurs mots possibles). Dans une playlist, elle montre aussi les chansons qui n'y sont pas encore.</li>
         <li><b>Sélectionner</b> permet d'ajouter, retirer, supprimer ou imprimer plusieurs chansons d'un coup.</li>
-        <li>Dans une playlist, touchez le numéro d'une chanson pour la déplacer directement à une autre position.</li>
+        <li>Dans une playlist, trois façons de réordonner : <b>glisser-déposer</b> (attrapez la poignée ⋮⋮ à gauche de la chanson, à la souris, au doigt ou au stylet, faites-la monter ou descendre puis relâchez ; la liste défile toute seule près du bord, Échap annule), les <b>flèches</b> haut / bas, ou le <b>numéro</b> de la chanson pour la placer directement à une autre position. Un message « Annuler » défait le glisser-déposer.</li>
         <li>Une suppression peut être annulée pendant quelques secondes.</li>
       </ul>
       <h4>Sauvegarde</h4>
@@ -1308,6 +1691,7 @@ const ICON = {
   book: '<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4.5A1.5 1.5 0 0 1 5.5 3H20v18H5.5A1.5 1.5 0 0 1 4 19.5v-15Z"/><line x1="8.4" y1="3" x2="8.4" y2="21"/></svg>',
   musicnote: '<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/></svg>',
   chevleft: '<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>',
+  grip: '<svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><circle cx="9" cy="5.5" r="1.8"/><circle cx="15" cy="5.5" r="1.8"/><circle cx="9" cy="12" r="1.8"/><circle cx="15" cy="12" r="1.8"/><circle cx="9" cy="18.5" r="1.8"/><circle cx="15" cy="18.5" r="1.8"/></svg>',
   chevup: '<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>',
   chevdown: '<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>',
   trash: '<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>',
@@ -1327,7 +1711,9 @@ const ICON = {
   search: '<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="10.5" cy="10.5" r="6.5"/><line x1="15.3" y1="15.3" x2="20.5" y2="20.5"/></svg>',
   printer: '<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>',
   copy: '<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="1.5"/><path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1"/></svg>',
+  metronome: '<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9.2 3h5.6l4 18H5.2l4-18Z"/><line x1="12" y1="17" x2="15.6" y2="6.6"/><circle cx="14.4" cy="10.1" r="1.2" fill="currentColor"/></svg>',
   more: '<svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>',
+  qr: '<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="7" height="7" rx="1"/><rect x="13.5" y="3.5" width="7" height="7" rx="1"/><rect x="3.5" y="13.5" width="7" height="7" rx="1"/><rect x="6" y="6" width="2" height="2" fill="currentColor" stroke="none"/><rect x="16" y="6" width="2" height="2" fill="currentColor" stroke="none"/><rect x="6" y="16" width="2" height="2" fill="currentColor" stroke="none"/><path d="M13.5 14h3v3M20.5 13.5v.01M13.5 20.5h3M20.5 17v3.5"/></svg>',
   help: '<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.5"/><path d="M9.2 9.3a2.9 2.9 0 0 1 5.6 1c0 1.9-2.8 2.4-2.8 4.1"/><line x1="12" y1="17.6" x2="12.01" y2="17.6"/></svg>',
 };
 
@@ -1429,11 +1815,60 @@ const COLOR_MAP = {
 
 // Couleur des accords et notation sont volontairement fixes (bleu clair / dièses) :
 // non configurables, pour un rendu garanti quel que soit le navigateur.
+/* Échelle de vitesse du défilement : 10 crans, +25 % à chaque cran, proportionnelle à la taille du texte.
+   Le cran 5 fait défiler une chanson moyenne (hauteur ≈ 150 fois la taille de la police) en 4 minutes, quelle que
+   soit la taille des caractères. La première échelle (12 px/s × 1,33 par cran, indépendante de la taille du texte)
+   était trois à quatre fois trop rapide pour de vraies chansons : elle est convertie au chargement (Store.migrateSpeeds). */
+const SPEED_SCALE_VERSION = 2;
+const SPEED_LEVEL_DEFAULT = 5;
+const SPEED_STEP_RATIO = 1.25;
+const SPEED_EM_PER_SECOND_AT_DEFAULT = 0.65;
+
+function scrollPxPerSecond(level, fontPx){
+  const lv = Math.max(1, Math.min(10, Number(level) || SPEED_LEVEL_DEFAULT));
+  return (fontPx || 28) * SPEED_EM_PER_SECOND_AT_DEFAULT * Math.pow(SPEED_STEP_RATIO, lv - SPEED_LEVEL_DEFAULT);
+}
+// Vitesse EasyZic (de 12 à 19 environ, 14–15 le plus souvent) -> cran de cette échelle : la vitesse EasyZic habituelle donne le cran 5.
+function easyzicSpeedToLevel(speed){
+  if (typeof speed !== 'number' || !isFinite(speed) || speed <= 0) return SPEED_LEVEL_DEFAULT;
+  return Math.max(1, Math.min(10, Math.round(SPEED_LEVEL_DEFAULT + Math.log(speed / 14.5) / Math.log(SPEED_STEP_RATIO))));
+}
+// Ancienne échelle -> nouvelle : environ ×0,7 sur le numéro du cran (ancien 7 = nouveau 5, ancien 8 = nouveau 6).
+function legacySpeedToLevel(level){
+  return Math.max(1, Math.min(10, Math.round(level * 0.7)));
+}
+
+// Mesures proposées -> nombre de temps (clics) par mesure. Pour les mesures composées (6/8, 9/8, 12/8), le temps est la noire pointée.
+const TIME_SIGNATURES = { '4/4': 4, '3/4': 3, '2/4': 2, '6/8': 2, '12/8': 4, '9/8': 3, '5/4': 5, '2/2': 2, '6/4': 6, '3/8': 3, '5/8': 5, '7/8': 7 };
+const DEFAULT_TIME_SIGNATURE = '4/4';
+const BPM_MIN = 30, BPM_MAX = 300;
+function normalizeBpm(value){
+  const n = Math.round(Number(value));
+  return n >= BPM_MIN && n <= BPM_MAX ? n : 0;       // 0 = pas de tempo renseigné
+}
+function normalizeTimeSignature(value){
+  return Object.prototype.hasOwnProperty.call(TIME_SIGNATURES, value) ? value : DEFAULT_TIME_SIGNATURE;
+}
+
 const DEFAULT_SETTINGS = {
   fontSize: 28,
-  defaultScrollSpeed: 5,
+  defaultScrollSpeed: SPEED_LEVEL_DEFAULT,
   lastExportAt: null,
+  speedScale: SPEED_SCALE_VERSION,
+  // Métronome : décompte d'une mesure avant le départ, et pendant le morceau ; chacun 'off' | 'visual' | 'sound' | 'both'
+  metronome: { countIn: 'off', during: 'visual', volume: 0.7 },
+  chordDiagrams: true,       // toucher un accord ouvre son diagramme
+  chordView: 'guitar',       // dernier instrument affiché dans la fenêtre des accords ('guitar' | 'piano')
+  swipeNav: false,           // balayage horizontal du prompteur = chanson précédente / suivante
+  shareBaseUrl: '',          // adresse où l'appli est hébergée (liens et QR codes de partage), quand elle ne se déduit pas de la page
 };
+
+// Réglages enregistrés + valeurs par défaut (les sous-objets sont copiés : jamais partagés avec DEFAULT_SETTINGS).
+function mergeSettings(saved){
+  const merged = Object.assign({}, DEFAULT_SETTINGS, saved || {});
+  merged.metronome = Object.assign({}, DEFAULT_SETTINGS.metronome, (saved && saved.metronome) || {});
+  return merged;
+}
 
 /* =========================================================================
    UTILITAIRES
@@ -1476,7 +1911,7 @@ function toast(message, isDanger, action){
    ========================================================================= */
 
 function defaultState(){
-  return { version: 1, songs: [], playlists: [], settings: { ...DEFAULT_SETTINGS } };
+  return { version: 1, songs: [], playlists: [], settings: mergeSettings() };
 }
 
 function seedDemoData(){
@@ -1506,6 +1941,8 @@ function seedDemoData(){
     singers: '',
     instruments: ['guitare'],
     originalKey: 'Am',
+    bpm: 92,
+    timeSig: '4/4',
     content: demoContent,
     transpose: 0,
     scrollSpeed: state.settings.defaultScrollSpeed,
@@ -1545,7 +1982,7 @@ function looksLikeChordPro(filename, text){
 
 function convertChordProContent(rawText){
   const lines = rawText.replace(/\r\n/g, '\n').split('\n');
-  let title = '', artist = '', key = '';
+  let title = '', artist = '', key = '', bpm = 0, timeSig = '';
   const outLines = [];
 
   lines.forEach(line => {
@@ -1559,6 +1996,8 @@ function convertChordProContent(rawText){
       if (word === 'title' || word === 't'){ title = value; return; }
       if (word === 'artist' || word === 'subtitle' || word === 'st'){ if (!artist) artist = value; return; }
       if (word === 'key'){ key = value; return; }
+      if (word === 'tempo'){ bpm = normalizeBpm(parseInt(value, 10)); return; }
+      if (word === 'time'){ const sig = value.replace(/\s+/g, ''); if (TIME_SIGNATURES[sig]) timeSig = sig; return; }
       if (word === 'start_of_chorus' || word === 'soc'){ outLines.push('{c: Refrain}'); return; }
       if (word === 'start_of_verse' || word === 'sov'){ outLines.push('{c: Couplet}'); return; }
       if (word === 'start_of_bridge' || word === 'sob'){ outLines.push('{c: Pont}'); return; }
@@ -1573,7 +2012,7 @@ function convertChordProContent(rawText){
     outLines.push(line);
   });
 
-  return { title, artist, key, content: outLines.join('\n').replace(/\n{3,}/g, '\n\n').trim() };
+  return { title, artist, key, bpm, timeSig, content: outLines.join('\n').replace(/\n{3,}/g, '\n\n').trim() };
 }
 
 function importChordProFile(filename, rawText){
@@ -1583,6 +2022,8 @@ function importChordProFile(filename, rawText){
     title: converted.title || fallbackTitle || 'Chanson importée',
     artist: converted.artist,
     originalKey: converted.key,
+    bpm: converted.bpm,
+    timeSig: converted.timeSig,
     content: converted.content,
   });
   if (UI.currentPlaylistId){
@@ -1646,11 +2087,10 @@ function convertEasyZicItem(item){
     artist = rawTitre.slice(dashIdx + 3).trim();
   }
   const content = convertEasyZicContent(item.contenu, rawTitre);
-  let scrollSpeed = 5;
-  if (typeof item.speed === 'number') scrollSpeed = clamp(Math.round(item.speed / 2), 1, 10);
+  const scrollSpeed = easyzicSpeedToLevel(item.speed);
   return {
     id: uid('song'), title: title || 'Sans titre', artist, style: '', singers: '',
-    instruments: ['guitare'], originalKey: '', content, transpose: 0, scrollSpeed,
+    instruments: ['guitare'], originalKey: '', bpm: 0, timeSig: DEFAULT_TIME_SIGNATURE, content, transpose: 0, scrollSpeed,
     createdAt: Date.now(), updatedAt: Date.now(),
   };
 }
@@ -1690,12 +2130,37 @@ const Store = {
     delete song.instrument;
     if (typeof song.style !== 'string') song.style = '';
     if (typeof song.singers !== 'string') song.singers = '';
+    song.bpm = normalizeBpm(song.bpm);
+    song.timeSig = normalizeTimeSignature(song.timeSig);
     return song;
   },
 
   normalizeState(){
     this.state.songs.forEach(song => this.normalizeSong(song));
     this.state.playlists.forEach(p => { if (!Array.isArray(p.songIds)) p.songIds = []; });
+  },
+
+  // Construit l'état à partir de données lues (stockage local, fichier importé, sauvegarde Drive).
+  // Renvoie true si les vitesses de défilement venaient de l'ancienne échelle et ont été converties : l'appelant enregistre alors.
+  adopt(parsed){
+    const saved = (parsed && parsed.settings) || {};
+    const legacySpeeds = saved.speedScale !== SPEED_SCALE_VERSION;
+    const state = Object.assign(defaultState(), parsed);
+    state.settings = mergeSettings(saved);
+    if (!Array.isArray(state.songs)) state.songs = [];
+    if (!Array.isArray(state.playlists)) state.playlists = [];
+    this.state = state;
+    this.normalizeState();
+    if (legacySpeeds) this.migrateSpeeds();
+    return legacySpeeds;
+  },
+
+  migrateSpeeds(){
+    this.state.songs.forEach(song => {
+      if (typeof song.scrollSpeed === 'number' && song.scrollSpeed >= 1) song.scrollSpeed = legacySpeedToLevel(song.scrollSpeed);
+    });
+    this.state.settings.defaultScrollSpeed = SPEED_LEVEL_DEFAULT;
+    this.state.settings.speedScale = SPEED_SCALE_VERSION;
   },
 
   load(){
@@ -1707,11 +2172,7 @@ const Store = {
         return this.state;
       }
       const parsed = JSON.parse(raw);
-      this.state = Object.assign(defaultState(), parsed);
-      this.state.settings = Object.assign({ ...DEFAULT_SETTINGS }, parsed.settings || {});
-      if (!Array.isArray(this.state.songs)) this.state.songs = [];
-      if (!Array.isArray(this.state.playlists)) this.state.playlists = [];
-      this.normalizeState();
+      if (this.adopt(parsed)) this.save();     // vitesses converties : on enregistre tout de suite le résultat
       return this.state;
     } catch (e){
       console.error('Erreur de lecture des données locales', e);
@@ -1745,6 +2206,8 @@ const Store = {
         ? data.instruments.filter(id => !!instrumentById(id))
         : (data.instrument ? [data.instrument] : ['guitare']),
       originalKey: data.originalKey || '',
+      bpm: normalizeBpm(data.bpm),
+      timeSig: normalizeTimeSignature(data.timeSig),
       content: data.content || '',
       transpose: 0,
       scrollSpeed: this.state.settings.defaultScrollSpeed,
@@ -2257,9 +2720,33 @@ const UI = {
     songId: null,
     context: null,
     isPlaying: false,
+    countingIn: false,           // décompte d'une mesure en cours avant le départ du défilement
     rafId: null,
     lastFrameTime: null,
     scrollRemainder: 0,
+    fullscreenWanted: false,     // l'utilisateur a demandé le plein écran (pour savoir si une sortie est voulue ou subie)
+    lastTouchAt: 0,
+    fsToast: null,
+  },
+  metro: {
+    testing: false,              // 'modal' | 'editor' quand un essai de métronome est en cours, sinon false
+    taps: [],                    // instants des frappes (« Frapper » = tempo à la volée)
+    warnedNoTempo: new Set(),    // chansons pour lesquelles on a déjà signalé « pas de tempo, pas de décompte »
+  },
+  chord: {
+    chord: null,                 // accord analysé affiché dans la fenêtre
+    symbols: [],                 // accords de la chanson (pastilles)
+    voicings: [],                // doigtés de guitare proposés
+    index: 0,                    // doigté affiché
+  },
+  share: {
+    songId: null,                // chanson dont la fenêtre « Partager » est ouverte
+    enc: null,                   // { token, rawSize, packedSize } (voir encodeSharedSong)
+    qr: null,                    // { version, ecc } du code affiché, null si la fiche est trop longue pour un QR code
+    seq: 0,                      // numéro de l'ouverture en cours : une préparation qui se termine trop tard est ignorée
+    incoming: null,              // fiche reçue, en attente de l'accord de l'utilisateur
+    existingId: null,            // chanson déjà présente avec le même titre et le même artiste
+    scan: null,                  // lecture de QR code par la caméra, en cours
   },
 };
 
@@ -2299,6 +2786,7 @@ function resetSelection(){
 
 function showView(name){
   const leavingPrompter = UI.view === 'prompter' && name !== 'prompter';
+  if (UI.metro.testing) stopMetronomeTest();
   UI.view = name;
   document.body.dataset.view = name;
   if (name !== 'library') resetSelection();
@@ -2306,7 +2794,11 @@ function showView(name){
   document.getElementById('viewEditor').hidden = name !== 'editor';
   document.getElementById('viewPrompter').hidden = name !== 'prompter';
   document.getElementById('topbar').hidden = name === 'prompter';
-  if (name !== 'prompter' && UI.prompter.isPlaying) pauseAutoscroll();
+  if (name !== 'prompter' && (UI.prompter.isPlaying || UI.prompter.countingIn)) pauseAutoscroll();
+  if (leavingPrompter){
+    UI.prompter.fullscreenWanted = false;
+    if (isFullscreenActive()) exitAppFullscreen();
+  }
   if (name === 'library') renderLibrary();
   if (name === 'prompter') requestWakeLock();
   else if (leavingPrompter) releaseWakeLock();
@@ -2316,8 +2808,15 @@ function showView(name){
    MODALES GÉNÉRIQUES (confirmation / saisie / sélection)
    ========================================================================= */
 
+function closeModalEl(modal){
+  modal.hidden = true;
+  if (modal.id === 'modalMetronome') onMetronomeModalClosed();
+  else if (modal.id === 'modalShare') UI.share.seq++;                  // une préparation de QR code encore en cours n'a plus à s'afficher
+  else if (modal.id === 'modalScan') stopScanner();                    // la caméra ne doit jamais rester allumée
+  else if (modal.id === 'modalShareImport') UI.share.incoming = null;
+}
 function hideAllModals(){
-  document.querySelectorAll('.modal-overlay').forEach(m => { m.hidden = true; });
+  document.querySelectorAll('.modal-overlay').forEach(closeModalEl);
 }
 
 function showConfirm(title, text, onConfirm){
@@ -2396,7 +2895,7 @@ document.getElementById('modalPickerCancel').addEventListener('click', () => {
 });
 
 document.querySelectorAll('.modal-overlay').forEach(overlay => {
-  overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.hidden = true; });
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) closeModalEl(overlay); });
 });
 
 /* =========================================================================
@@ -2409,8 +2908,9 @@ function selectPlaylist(id){
   renderLibrary();
 }
 
+// Précédent / suivant suivent ce que l'écran montre : l'ordre de la playlist ouverte, ou la liste affichée (tri et recherche compris).
 function currentContextForPrompter(){
-  return UI.currentPlaylistId ? { type: 'playlist', playlistId: UI.currentPlaylistId } : { type: 'library' };
+  return UI.currentPlaylistId ? { type: 'playlist', playlistId: UI.currentPlaylistId } : { type: 'library', ids: UI.visibleIds.slice() };
 }
 
 function renderPlaylistsRail(){
@@ -2499,6 +2999,9 @@ function songRowHTML(song, idx, o){
     lead = '<span class="song-index">' + (idx + 1) + '</span>';
   }
 
+  const grip = (o.reorder && o.kind === 'member')
+    ? '<button type="button" class="drag-handle" data-drag-handle="' + id + '" title="Glisser pour déplacer" aria-label="Glisser pour déplacer « ' + escapeHTML(song.title) + ' »">' + ICON.grip + '</button>'
+    : '';
   const reorder = (o.reorder && o.kind === 'member') ? (
     '<div class="reorder-buttons">' +
       '<button data-reorder="up" data-song-id="' + id + '" ' + (o.isFirst ? 'disabled' : '') + ' aria-label="Monter">' + ICON.chevup + '</button>' +
@@ -2508,15 +3011,16 @@ function songRowHTML(song, idx, o){
 
   const openBtn = '<button class="icon-btn subtle" data-open-song="' + id + '" title="Ouvrir au prompteur" aria-label="Ouvrir au prompteur">' + ICON.playsm + '</button>';
   const editBtn = '<button class="icon-btn subtle" data-edit-song="' + id + '" title="Modifier" aria-label="Modifier">' + ICON.pencil + '</button>';
+  const shareBtn = '<button class="icon-btn subtle" data-share-song="' + id + '" title="Partager (QR code, lien)" aria-label="Partager (QR code, lien)">' + ICON.qr + '</button>';
   let actions;
   if (o.kind === 'member'){
-    actions = openBtn + editBtn +
+    actions = openBtn + editBtn + shareBtn +
       '<button class="icon-btn subtle" data-remove-from-playlist="' + id + '" title="Retirer de la playlist" aria-label="Retirer de la playlist">' + ICON.close + '</button>';
   } else if (o.kind === 'other'){
     actions = openBtn + editBtn +
       '<button class="icon-btn subtle" data-add-here="' + id + '" title="Ajouter à cette playlist" aria-label="Ajouter à cette playlist">' + ICON.plus + '</button>';
   } else {
-    actions = openBtn + editBtn +
+    actions = openBtn + editBtn + shareBtn +
       '<button class="icon-btn subtle" data-add-to-playlist="' + id + '" title="Ajouter à une playlist" aria-label="Ajouter à une playlist">' + ICON.plus + '</button>' +
       '<button class="icon-btn subtle danger" data-delete-song="' + id + '" title="Supprimer" aria-label="Supprimer">' + ICON.trash + '</button>';
   }
@@ -2527,7 +3031,7 @@ function songRowHTML(song, idx, o){
 
   return (
     '<li class="song-row' + (selected ? ' is-selected' : '') + '" data-song-id="' + id + '"' + (o.kind === 'other' ? ' data-other="1"' : '') + '>' +
-      lead + reorder +
+      grip + lead + reorder +
       '<div class="song-main" data-open-song="' + id + '">' +
         '<div class="song-title-line"><span class="song-title">' + escapeHTML(song.title) + '</span>' + renderInstrumentTags(song) + '</div>' +
         (d.subtitle ? '<span class="song-artist">' + escapeHTML(d.subtitle) + '</span>' : '') +
@@ -2797,7 +3301,7 @@ document.getElementById('songList').addEventListener('click', (e) => {
   if (openBtn){
     // Une chanson trouvée hors de la playlist s'ouvre dans le contexte "bibliothèque" (précédent/suivant cohérents).
     const row = openBtn.closest('.song-row');
-    const context = row && row.dataset.other ? { type: 'library' } : currentContextForPrompter();
+    const context = row && row.dataset.other ? { type: 'library', ids: UI.visibleIds.slice() } : currentContextForPrompter();
     openPrompter(openBtn.dataset.openSong, context);
     return;
   }
@@ -2882,11 +3386,125 @@ document.getElementById('songList').addEventListener('click', (e) => {
   }
 });
 
+/* ---- glisser-déposer : réordonner une playlist à la souris, au doigt ou au stylet ----
+   La poignée (⋮⋮) de chaque ligne démarre le geste ; le reste de la ligne continue de faire défiler la liste.
+   Les autres lignes s'écartent en direct, la liste défile toute seule près des bords, Échap annule et le
+   déplacement se défait d'un geste. Les flèches et la saisie du numéro de position restent disponibles. */
+const RowDrag = { s: null };
+
+function scrollParentOf(el){
+  for (let n = el.parentElement; n && n !== document.body && n !== document.documentElement; n = n.parentElement){
+    const oy = getComputedStyle(n).overflowY;
+    if ((oy === 'auto' || oy === 'scroll') && n.scrollHeight > n.clientHeight + 1) return n;
+  }
+  return document.scrollingElement || document.documentElement;
+}
+
+function startRowDrag(handle, e){
+  const pl = Store.getPlaylist(UI.currentPlaylistId);
+  const row = handle.closest('.song-row');
+  const list = document.getElementById('songList');
+  if (!pl || !row || RowDrag.s) return;
+  const rows = Array.from(list.querySelectorAll('.song-row:not([data-other])'));
+  const from = rows.indexOf(row);
+  if (from === -1 || rows.length < 2) return;
+  const scroller = scrollParentOf(list);
+  const rects = rows.map(r => { const b = r.getBoundingClientRect(); return { top: b.top, height: b.height }; });
+  const gap = Math.max(0, rects[1].top - (rects[0].top + rects[0].height));
+  RowDrag.s = {
+    pl, songId: row.dataset.songId, row, rows, rects, from, to: from, gap, list, scroller, handle,
+    pointerId: e.pointerId, startY: e.clientY, lastY: e.clientY, scroll0: scroller.scrollTop, raf: 0,
+  };
+  try { handle.setPointerCapture(e.pointerId); } catch (err) { /* sans capture, les écouteurs du document suffisent */ }
+  list.classList.add('is-sorting');
+  row.classList.add('is-dragging');
+  document.body.classList.add('is-row-dragging');
+  updateRowDrag();
+  RowDrag.s.raf = requestAnimationFrame(rowDragTick);
+}
+
+// Position de la ligne tenue (sous le doigt) et écartement des autres lignes ; calcule la place où elle atterrirait.
+function updateRowDrag(){
+  const d = RowDrag.s;
+  if (!d) return;
+  const dy = (d.lastY - d.startY) + (d.scroller.scrollTop - d.scroll0);
+  const own = d.rects[d.from];
+  const center = own.top + own.height / 2 + dy;
+  let to = 0;
+  d.rects.forEach((r, j) => { if (j !== d.from && r.top + r.height / 2 < center) to++; });
+  d.to = to;
+  const span = own.height + d.gap;
+  d.rows.forEach((r, j) => {
+    if (j === d.from){ r.style.transform = 'translateY(' + Math.round(dy) + 'px)'; return; }
+    const shift = (j > d.from && j <= to) ? -span : (j < d.from && j >= to) ? span : 0;
+    r.style.transform = shift ? 'translateY(' + shift + 'px)' : '';
+  });
+}
+
+// Défilement automatique de la liste quand le doigt approche du haut ou du bas de la zone visible.
+function rowDragTick(){
+  const d = RowDrag.s;
+  if (!d) return;
+  const isPage = d.scroller === document.scrollingElement || d.scroller === document.documentElement;
+  const box = isPage ? { top: 0, bottom: window.innerHeight } : d.scroller.getBoundingClientRect();
+  const zone = 64;
+  let v = 0;
+  if (d.lastY < box.top + zone) v = -Math.min(1, (box.top + zone - d.lastY) / zone) * 16;
+  else if (d.lastY > box.bottom - zone) v = Math.min(1, (d.lastY - (box.bottom - zone)) / zone) * 16;
+  if (v){ d.scroller.scrollTop += v; updateRowDrag(); }
+  d.raf = requestAnimationFrame(rowDragTick);
+}
+
+function endRowDrag(cancel){
+  const d = RowDrag.s;
+  if (!d) return;
+  RowDrag.s = null;
+  cancelAnimationFrame(d.raf);
+  try { d.handle.releasePointerCapture(d.pointerId); } catch (err) { /* déjà relâché */ }
+  d.list.classList.remove('is-sorting');
+  document.body.classList.remove('is-row-dragging');
+  d.rows.forEach(r => { r.style.transform = ''; r.classList.remove('is-dragging'); });
+  if (cancel || d.to === d.from) return;
+  Store.moveSongToPosition(d.pl.id, d.songId, d.to);
+  renderLibrary();
+  const moved = findSongRow(d.songId);
+  if (moved){
+    moved.classList.add('just-moved');
+    if (moved.scrollIntoView) moved.scrollIntoView({ block: 'nearest' });
+  }
+  const song = Store.getSong(d.songId);
+  toast('« ' + (song ? song.title : 'Chanson') + ' » : position ' + (d.to + 1) + ' sur ' + d.rows.length + '.', false, {
+    label: 'Annuler',
+    onClick: () => { Store.moveSongToPosition(d.pl.id, d.songId, d.from); renderLibrary(); },
+  });
+}
+
+const samePointer = (e) => !RowDrag.s || RowDrag.s.pointerId === undefined || e.pointerId === undefined || e.pointerId === RowDrag.s.pointerId;
+document.addEventListener('pointerdown', (e) => {
+  const handle = e.target.closest ? e.target.closest('[data-drag-handle]') : null;
+  if (!handle || e.button > 0) return;                                  // clic droit et boutons annexes ignorés
+  e.preventDefault();
+  startRowDrag(handle, e);
+});
+document.addEventListener('pointermove', (e) => {
+  if (!RowDrag.s || !samePointer(e)) return;
+  RowDrag.s.lastY = e.clientY;
+  updateRowDrag();
+  if (e.cancelable) e.preventDefault();
+});
+document.addEventListener('pointerup', (e) => { if (RowDrag.s && samePointer(e)) endRowDrag(false); });
+document.addEventListener('pointercancel', (e) => { if (RowDrag.s && samePointer(e)) endRowDrag(true); });
+document.addEventListener('contextmenu', (e) => { if (e.target.closest && e.target.closest('[data-drag-handle]')) e.preventDefault(); });
+document.addEventListener('keydown', (e) => {
+  if (RowDrag.s && e.key === 'Escape'){ e.preventDefault(); e.stopPropagation(); endRowDrag(true); }
+}, true);
+
 /* ---- menu « ⋯ » d'une ligne (téléphone) ----
    Les boutons d'action de la ligne restent dans le DOM (le CSS les masque sur téléphone) : le menu ne
    duplique donc aucune logique, il n'a qu'à « toucher » le bon bouton. */
 const SONG_MENU_ACTIONS = [
   { attr: 'data-edit-song',            label: 'Modifier la chanson' },
+  { attr: 'data-share-song',           label: 'Partager (QR code, lien)…' },
   { attr: 'data-move-song',            label: 'Déplacer à une position…' },
   { attr: 'data-add-to-playlist',      label: 'Ajouter à une playlist…' },
   { attr: 'data-add-here',             label: 'Ajouter à cette playlist' },
@@ -2981,7 +3599,8 @@ function fillPrintSheets(songIds){
     const song = Store.getSong(sid);
     if (!song) return '';
     const d = describeSong(song);
-    const metaBits = [d.instrumentsText, song.style, song.singers].filter(Boolean).map(escapeHTML).join(' · ');
+    const tempoText = song.bpm ? '♩ ' + song.bpm + ' · ' + normalizeTimeSignature(song.timeSig) : '';
+    const metaBits = [d.instrumentsText, song.style, song.singers, tempoText].filter(Boolean).map(escapeHTML).join(' · ');
     const contentHTML = renderSongHTML(song.content, { transpose: song.transpose || 0, preferFlat: false });
     return '<div class="print-song-sheet">' +
       '<h1 class="ps-title">' + escapeHTML(song.title) + '</h1>' +
@@ -3093,6 +3712,8 @@ function openEditor(songId, returnTo){
   document.getElementById('inputStyle').value = song ? (song.style || '') : '';
   document.getElementById('inputSingers').value = song ? (song.singers || '') : '';
   document.getElementById('inputKey').value = song ? (song.originalKey || '') : '';
+  document.getElementById('inputBpm').value = song && song.bpm ? song.bpm : '';
+  document.getElementById('inputTimeSig').value = song ? normalizeTimeSignature(song.timeSig) : DEFAULT_TIME_SIGNATURE;
   updateCapoSuggestion();
   document.getElementById('songContentInput').value = song ? song.content : '';
   renderInstrumentPicker(song ? getSongInstruments(song) : ['guitare']);
@@ -3110,6 +3731,27 @@ function updateCapoSuggestion(){
   el.textContent = s ? ('💡 Capo ' + s.fret + ', jouez en ' + s.shape) : '';
 }
 document.getElementById('inputKey').addEventListener('change', updateCapoSuggestion);
+
+document.getElementById('btnTapTempo').addEventListener('click', () => {
+  const bpm = registerTap(performance.now());
+  if (bpm) document.getElementById('inputBpm').value = bpm;
+});
+document.getElementById('btnEditorMetro').addEventListener('click', () => {
+  if (UI.metro.testing === 'editor'){ stopMetronomeTest(); return; }
+  const bpm = normalizeBpm(document.getElementById('inputBpm').value);
+  if (!bpm){
+    toast('Entrez d\'abord un tempo entre ' + BPM_MIN + ' et ' + BPM_MAX + ' BPM.', true);
+    document.getElementById('inputBpm').focus();
+    return;
+  }
+  startMetronomeTest(bpm, TIME_SIGNATURES[normalizeTimeSignature(document.getElementById('inputTimeSig').value)], 'editor');
+});
+// un essai en cours suit les réglages modifiés
+['inputBpm', 'inputTimeSig'].forEach(id => document.getElementById(id).addEventListener('change', () => {
+  if (UI.metro.testing !== 'editor') return;
+  stopMetronomeTest();
+  document.getElementById('btnEditorMetro').click();
+}));
 
 function closeEditor(){
   if (UI.editorReturnTo === 'prompter' && UI.prompter.songId && Store.getSong(UI.prompter.songId)){
@@ -3232,12 +3874,21 @@ document.getElementById('btnSaveSong').addEventListener('click', () => {
     document.getElementById('inputTitle').focus();
     return;
   }
+  const bpmText = document.getElementById('inputBpm').value.trim();
+  if (bpmText !== '' && !normalizeBpm(bpmText)){
+    toast('Le tempo doit être compris entre ' + BPM_MIN + ' et ' + BPM_MAX + ' BPM (ou laissé vide).', true);
+    document.getElementById('inputBpm').focus();
+    return;
+  }
+  stopMetronomeTest();
   const data = {
     title,
     artist: document.getElementById('inputArtist').value.trim(),
     style: document.getElementById('inputStyle').value.trim(),
     singers: document.getElementById('inputSingers').value.trim(),
     originalKey: document.getElementById('inputKey').value,
+    bpm: normalizeBpm(bpmText),
+    timeSig: normalizeTimeSignature(document.getElementById('inputTimeSig').value),
     instruments: INSTRUMENTS.map(inst => inst.id).filter(id => UI.editingInstruments.includes(id)),
     content: document.getElementById('songContentInput').value,
   };
@@ -3266,6 +3917,8 @@ function duplicateSong(id){
     style: song.style,
     singers: song.singers,
     originalKey: song.originalKey,
+    bpm: song.bpm,
+    timeSig: song.timeSig,
     instruments: getSongInstruments(song),
     content: song.content,
   });
@@ -3282,6 +3935,913 @@ function duplicateSong(id){
 document.getElementById('btnDuplicateSong').addEventListener('click', () => {
   if (UI.editingSongId) duplicateSong(UI.editingSongId);
 });
+
+/* =========================================================================
+   BIBLIOTHÈQUE D'ACCORDS : analyse du symbole, doigtés de guitare, clavier de piano
+   =========================================================================
+   Tout est calculé (rien n'est tiré d'une liste figée) : le symbole est analysé en notes (fondamentale, tierce,
+   quinte, septième, extensions, basse), puis chaque doigté proposé est VÉRIFIÉ note par note : les notes réellement
+   jouées sur les cordes doivent être exactement celles de l'accord, la plus grave étant la fondamentale (ou la basse
+   d'un accord renversé). Un doigté faux ne peut donc pas s'afficher. */
+
+const GUITAR_TUNING = [40, 45, 50, 55, 59, 64];            // Mi La Ré Sol Si Mi (numéros MIDI)
+const GUITAR_STRING_LABELS = ['E', 'A', 'D', 'G', 'B', 'e'];
+const CHORD_LETTERS = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
+const CHORD_LETTER_PC = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
+const CHORD_DEGREE_STEPS = { 1: 0, 2: 1, 3: 2, 4: 3, 5: 4, 6: 5, 7: 6, 9: 1, 11: 3, 13: 5 };
+
+function parseNoteSpec(text){
+  const m = /^([A-Ga-g])(#{1,2}|b{1,2})?/.exec(text || '');
+  if (!m) return null;
+  const letter = m[1].toUpperCase();
+  const acc = m[2] ? (m[2][0] === '#' ? m[2].length : -m[2].length) : 0;
+  return {
+    letter, acc, length: m[0].length,
+    pc: ((CHORD_LETTER_PC[letter] + acc) % 12 + 12) % 12,
+    name: letter + (acc > 0 ? '#'.repeat(acc) : acc < 0 ? 'b'.repeat(-acc) : ''),
+  };
+}
+
+// « E♭ » -> « Eb », « (Em7) » -> « Em7 », « E7... » -> « E7 »
+function normalizeChordSymbol(raw){
+  let t = String(raw == null ? '' : raw).trim().replace(/♭/g, 'b').replace(/♯/g, '#');
+  t = t.replace(/(\.{2,}|…)+$/, '').trim();
+  if (t.length > 2 && t[0] === '(' && t[t.length - 1] === ')') t = t.slice(1, -1).trim();
+  return t;
+}
+
+// « D-Em » : deux accords soudés par un tiret
+function splitJoinedChords(raw){
+  const t = normalizeChordSymbol(raw);
+  if (!/^[A-G][^-]*-[A-G]/.test(t)) return [t];
+  return t.split('-').filter(Boolean);
+}
+
+// Lit le suffixe d'un accord (tout ce qui suit la fondamentale, basse exclue). Renvoie null si un morceau est inconnu.
+function scanChordSuffix(input){
+  const m0 = { minor: false, dim: false, halfDim: false, aug: false, sus: 0, maj7: false, seven: false, ext: 0,
+    sixth: false, six9: false, power: false, flat5: false, sharp5: false, alt9: 0, sharp11: false, flat13: false,
+    adds: [], omit3: false, omit5: false, frenchSus: 0 };
+  let s = input.replace(/[()\s,]/g, '');
+  let guard = 0;
+  while (s.length > 0 && guard++ < 30){
+    let m;
+    if ((m = /^(?:omit|no)(3|5)/.exec(s))){
+      if (m[1] === '3') m0.omit3 = true; else m0.omit5 = true;
+    } else if ((m = /^add([#b]?)(2|4|6|9|11|13)/.exec(s))){
+      m0.adds.push({ alt: m[1], n: Number(m[2]) });
+    } else if ((m = /^sus(2|4)?/.exec(s))){
+      m0.sus = m[1] ? Number(m[1]) : 4;
+    } else if ((m = /^(?:maj|Maj|MAJ|M|Δ|△|\^)(7|9|11|13)?/.exec(s))){
+      if (m[1]){ m0.maj7 = true; m0.seven = true; if (Number(m[1]) > 7) m0.ext = Math.max(m0.ext, Number(m[1])); }
+      else if (m0.seven) m0.maj7 = true;                       // « G7M » : la septième est majeure
+    } else if ((m = /^(?:min|mi|m|−|-(?!5))/.exec(s))){
+      m0.minor = true;
+    } else if ((m = /^ø/.exec(s))){
+      m0.halfDim = true; m0.dim = true; m0.seven = true;
+    } else if ((m = /^(?:dim|°|o)/.exec(s))){
+      m0.dim = true;
+    } else if ((m = /^(?:aug|\+(?!(?:5|9|11|13)))/.exec(s))){
+      m0.aug = true;
+    } else if ((m = /^([#+b-])(5|9|11|13)/.exec(s))){
+      const up = m[1] === '#' || m[1] === '+';
+      const n = Number(m[2]);
+      if (n === 5){ if (up) m0.sharp5 = true; else m0.flat5 = true; }
+      else if (n === 9) m0.alt9 = up ? 1 : -1;
+      else if (n === 11){ if (up) m0.sharp11 = true; else return null; }
+      else if (n === 13){ if (!up) m0.flat13 = true; else return null; }
+    } else if ((m = /^69/.exec(s))){
+      m0.six9 = true;
+    } else if ((m = /^13/.exec(s))){
+      m0.ext = 13;
+    } else if ((m = /^11/.exec(s))){
+      m0.ext = Math.max(m0.ext, 11);
+    } else if ((m = /^9/.exec(s))){
+      m0.ext = Math.max(m0.ext, 9);
+    } else if ((m = /^7/.exec(s))){
+      m0.seven = true;
+    } else if ((m = /^6/.exec(s))){
+      m0.sixth = true;
+    } else if ((m = /^5/.exec(s))){
+      m0.power = true;
+    } else if ((m = /^4/.exec(s))){
+      if (m0.minor) m0.adds.push({ alt: '', n: 4 }); else { m0.sus = 4; m0.frenchSus = 4; }       // « A4 » = Asus4 (notation française)
+    } else if ((m = /^2/.exec(s))){
+      if (m0.minor) m0.adds.push({ alt: '', n: 2 }); else { m0.sus = 2; m0.frenchSus = 2; }       // « F2 » = Fsus2
+    } else {
+      return null;
+    }
+    s = s.slice(m[0].length);
+  }
+  return m0;
+}
+
+function buildChordTones(model){
+  const tones = [];
+  const add = (semis, deg, label, req, role) => tones.push({ semis, deg, label, req: !!req, role: role || '' });
+  add(0, 1, '1', true, 'root');
+  const hasThird = !model.power && !model.omit3;
+  const elevenChord = model.ext === 11;
+  if (hasThird){
+    if (model.sus === 2) add(2, 2, '2', true, 'third');
+    else if (model.sus === 4) add(5, 4, '4', true, 'third');
+    else if (model.minor || model.dim) add(3, 3, 'b3', !elevenChord, 'third');
+    else add(4, 3, '3', !elevenChord, 'third');
+  }
+  if (!model.omit5){
+    if (model.dim || model.flat5) add(6, 5, 'b5', true, 'fifth');
+    else if (model.aug || model.sharp5) add(8, 5, '#5', true, 'fifth');
+    else add(7, 5, '5', model.power, 'fifth');
+  }
+  if (model.maj7) add(11, 7, '7', true, 'seventh');
+  else if (model.dim && !model.halfDim && model.seven) add(9, 7, 'bb7', true, 'seventh');
+  else if (model.seven || model.ext >= 9) add(10, 7, 'b7', true, 'seventh');
+  if (model.sixth || model.six9) add(9, 6, '6', true, 'sixth');
+  if (model.alt9 === -1) add(13, 9, 'b9', true, 'ninth');
+  else if (model.alt9 === 1) add(15, 9, '#9', true, 'ninth');
+  else if (model.ext >= 9 || model.six9) add(14, 9, '9', model.ext === 9 || model.six9, 'ninth');
+  if (model.sharp11) add(18, 11, '#11', true, 'eleventh');
+  else if (model.ext === 11) add(17, 11, '11', true, 'eleventh');
+  if (model.flat13) add(20, 13, 'b13', true, 'thirteenth');
+  else if (model.ext === 13) add(21, 13, '13', true, 'thirteenth');
+  model.adds.forEach(a => {
+    const base = { 2: 2, 4: 5, 6: 9, 9: 14, 11: 17, 13: 21 }[a.n];
+    const shift = a.alt === '#' ? 1 : a.alt === 'b' ? -1 : 0;
+    const deg = a.n === 6 ? 6 : a.n;
+    add(base + shift, deg, (a.alt || '') + String(a.n), true, 'added');
+  });
+  // pas de doublon sur la même note (un « 6 » et un « 13 » tombent sur le même son)
+  const seen = new Set();
+  return tones.filter(t => { const k = t.semis % 12; if (seen.has(k)) return false; seen.add(k); return true; })
+    .sort((a, b) => a.semis - b.semis);
+}
+
+// Nom de note selon l'intervalle (tierce = deux lettres plus haut, quinte = quatre...) : Cm = C Eb G, E = E G# B
+function spellTone(root, tone){
+  const letterIdx = (CHORD_LETTERS.indexOf(root.letter) + CHORD_DEGREE_STEPS[tone.deg]) % 7;
+  const letter = CHORD_LETTERS[letterIdx];
+  const target = (root.pc + tone.semis) % 12;
+  let diff = (((target - CHORD_LETTER_PC[letter]) % 12) + 12) % 12;
+  if (diff > 6) diff -= 12;
+  if (Math.abs(diff) <= 1) return letter + (diff === 1 ? '#' : diff === -1 ? 'b' : '');
+  return (root.acc < 0 ? ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B'] : ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'])[target];
+}
+
+// Analyse un symbole d'accord. Renvoie null si ce n'est pas un accord reconnu.
+function parseChord(raw){
+  const parts = splitJoinedChords(raw);
+  const symbol = parts[0];
+  if (!symbol || !/^[A-G]/.test(symbol)) return null;
+  const root = parseNoteSpec(symbol);
+  if (!root) return null;
+  let rest = symbol.slice(root.length).replace(/6\/9/g, '69');
+  let bass = null;
+  const slash = rest.lastIndexOf('/');
+  if (slash !== -1){
+    bass = parseNoteSpec(rest.slice(slash + 1));
+    if (!bass) return null;
+    rest = rest.slice(0, slash);
+  }
+  const model = scanChordSuffix(rest);
+  if (!model) return null;
+  const tones = buildChordTones(model);
+  const notes = tones.map(t => ({ semis: t.semis, pc: (root.pc + t.semis) % 12, name: spellTone(root, t), label: t.label, req: t.req, role: t.role }));
+  const requiredPcs = Array.from(new Set(notes.filter(n => n.req).map(n => n.pc)));
+  const optionalPcs = Array.from(new Set(notes.filter(n => !n.req).map(n => n.pc))).filter(pc => !requiredPcs.includes(pc));
+  const bassPc = bass ? bass.pc : root.pc;
+  if (bass && !requiredPcs.includes(bass.pc) && !optionalPcs.includes(bass.pc)) requiredPcs.push(bass.pc);
+  // le nom lu : « A4 » est lu « Asus4 »
+  let reading = '';
+  if (model.frenchSus) reading = root.name + 'sus' + model.frenchSus + (bass ? '/' + bass.name : '');
+  return {
+    symbol, parts, root, bass, model, notes,
+    requiredPcs, optionalPcs, bassPc, power: model.power,
+    // clé d'équivalence : « Bb » et « A# », « Cmaj7 » et « CM7 » donnent la même clé
+    key: root.pc + '|' + notes.map(n => n.semis + (n.req ? '' : '?')).join(',') + (bass ? '/' + bass.pc : ''),
+    reading,
+    formula: notes.map(n => n.label).join(' '),
+    noteNames: notes.map(n => n.name),
+    bassName: bass ? bass.name : '',
+  };
+}
+
+/* ---------------------------------------------------------------------- guitare */
+
+const GUITAR_CURATED_SOURCE = [
+  // symbole, frettes (E A D G B e ; x = corde non jouée), doigts (0 = corde à vide ou non jouée)
+  ['C', 'x32010', '032010'], ['D', 'xx0232', '000132'], ['E', '022100', '023100'], ['F', 'xx3211', '003211'], ['F', '133211', '134211'],
+  ['G', '320003', '210003'], ['A', 'x02220', '001230'],
+  ['Am', 'x02210', '002310'], ['Dm', 'xx0231', '000231'], ['Em', '022000', '023000'],
+  ['A7', 'x02020', '002030'], ['B7', 'x21202', '021304'], ['C7', 'x32310', '032410'], ['D7', 'xx0212', '000213'], ['E7', '020100', '020100'], ['G7', '320001', '320001'],
+  ['Am7', 'x02010', '002010'], ['Dm7', 'xx0211', '000211'], ['Em7', '020000', '020000'], ['Bm7', 'x20202', '010203'],
+  ['Cmaj7', 'x32000', '032000'], ['Dmaj7', 'xx0222', '000111'], ['Emaj7', '021100', '032100'], ['Fmaj7', 'xx3210', '003210'], ['Gmaj7', '320002', '310002'], ['Amaj7', 'x02120', '002130'],
+  ['Asus2', 'x02200', '001200'], ['Asus4', 'x02230', '001230'], ['Dsus2', 'xx0230', '000120'], ['Dsus4', 'xx0233', '000123'], ['Esus4', '022200', '023400'],
+  ['Gsus4', '330013', '230014'], ['E7sus4', '020200', '020300'], ['A7sus4', 'x02030', '001020'], ['D7sus4', 'xx0213', '000213'],
+  ['Cadd9', 'x32030', '021030'], ['Gadd9', '320203', '310204'], ['Aadd9', 'x02420', '001320'],
+  ['A6', 'x02222', '001111'], ['G6', '320000', '210000'], ['C6', 'x32210', '043210'], ['D6', 'xx0202', '000102'], ['E6', '022120', '023140'],
+  ['Am6', 'x02212', '002314'], ['Dm6', 'xx0201', '000201'], ['Em6', '022020', '012030'],
+  ['A9', 'x02423', '001423'], ['C9', 'x32333', '032444'], ['E9', '020102', '020103'],
+  ['Caug', 'x32110', '043110'], ['Eaug', '032110', '043120'], ['Gaug', '321003', '321004'], ['Aaug', 'x03221', '004231'],
+  ['E5', '022xxx', '012000'], ['A5', 'x022xx', '001200'], ['D5', 'xx023x', '000120'],
+  ['D/F#', '2x0232', '100243'], ['G/B', 'x20003', '010002'], ['G/F#', '2x0003', '100004'], ['C/E', '032010', '032010'], ['Am/G', '302210', '402310'],
+];
+
+function guitarMaskOf(pcs){ return pcs.reduce((m, pc) => m | (1 << pc), 0); }
+
+// Les notes réellement jouées par un doigté (numéros de notes 0-11)
+function voicingPitchClasses(frets){
+  const out = [];
+  frets.forEach((f, s) => { if (f >= 0) out.push((GUITAR_TUNING[s] + f) % 12); });
+  return out;
+}
+
+// Le doigté est-il juste ? Toutes les notes jouées appartiennent à l'accord, toutes les notes indispensables y sont,
+// et la plus grave est la fondamentale (ou la basse demandée).
+function isValidGuitarVoicing(chord, frets){
+  if (!frets || frets.length !== 6) return false;
+  const played = voicingPitchClasses(frets);
+  if (played.length < (chord.power ? 2 : 3)) return false;
+  const allowed = new Set(chord.requiredPcs.concat(chord.optionalPcs, [chord.bassPc]));
+  if (!played.every(pc => allowed.has(pc))) return false;
+  if (!chord.requiredPcs.every(pc => played.includes(pc))) return false;
+  const distinct = new Set(played).size;
+  if (distinct < (chord.power ? 2 : Math.min(3, allowed.size))) return false;
+  const lowest = frets.findIndex(f => f >= 0);
+  if ((GUITAR_TUNING[lowest] + frets[lowest]) % 12 !== chord.bassPc) return false;
+  const fretted = frets.filter(f => f > 0);
+  if (fretted.length && Math.max.apply(null, fretted) - Math.min.apply(null, fretted) > 4) return false;
+  return true;
+}
+
+// Un doigté de main gauche est-il jouable ? frets : 6 cases (-1 = corde muette) ; fingers : 6 doigts (1 = index … 4 = auriculaire,
+// 0 = corde à vide ou muette). Un même doigt sur plusieurs cordes est un barré : même case, et aucune corde à vide, muette
+// ou plus basse sous le barré. Les doigts suivent l'ordre des cases, sans écart de plus d'une case en trop.
+// Renvoie { barres: [{fret, from, to, finger}] } (0, 1 ou 2 barrés), ou null si le doigté est impossible.
+function checkFingering(frets, fingers){
+  if (!fingers || fingers.length !== 6) return null;
+  const notes = [];
+  for (let s = 0; s < 6; s++){
+    const f = frets[s], d = fingers[s];
+    if (f > 0){ if (!(d >= 1 && d <= 4)) return null; notes.push({ s, f, d }); }
+    else if (d !== 0) return null;
+  }
+  const barres = [];
+  for (let d = 1; d <= 4; d++){
+    const mine = notes.filter(n => n.d === d);
+    if (mine.length < 2) continue;
+    const fret = mine[0].f;
+    if (barres.length >= 2 || mine.some(n => n.f !== fret)) return null;
+    const from = mine[0].s, to = mine[mine.length - 1].s;
+    for (let s = from; s <= to; s++){
+      if (frets[s] < fret) return null;
+      if (frets[s] === fret && fingers[s] !== d) return null;
+    }
+    barres.push({ fret, from, to, finger: d });
+  }
+  for (const a of notes) for (const b of notes){
+    if (a.f < b.f && (a.d >= b.d || b.f - a.f > (b.d - a.d) + 1)) return null;
+  }
+  return { barres };
+}
+
+// Doigts conseillés (et barré éventuel) pour un doigté de guitare : on cherche l'attribution la plus naturelle, l'index sur la case
+// la plus basse, un doigt par case en montant, un barré seulement quand il faut (plus de 4 cordes à appuyer) ou quand il est
+// évident (petit barré de l'index). Renvoie { fingers:[6], barres:[…] } ou null si 4 doigts ne suffisent pas.
+function assignFingers(frets){
+  const notes = [];
+  frets.forEach((f, s) => { if (f > 0) notes.push({ s, f }); });
+  const fingers = frets.map(() => 0);
+  if (!notes.length) return { fingers, barres: [] };
+  const minF = Math.min.apply(null, notes.map(n => n.f));
+  const groups = Array.from(new Set(notes.map(n => n.f))).sort((a, b) => a - b)
+    .map(f => ({ f, notes: notes.filter(n => n.f === f) }));
+  // façons de tenir une case : un doigt par corde, ou un barré sur une suite de cordes sans trou
+  const plansFor = (g) => {
+    const plans = [{ items: g.notes.map(n => [n.s]), barre: false }];
+    for (let i = 0; i < g.notes.length - 1; i++){
+      for (let j = i + 1; j < g.notes.length; j++){
+        const from = g.notes[i].s, to = g.notes[j].s;
+        let clean = true;
+        for (let s = from; s <= to; s++) if (frets[s] < g.f){ clean = false; break; }
+        if (!clean) break;
+        const items = [];
+        g.notes.forEach((n, k) => {
+          if (k < i || k > j) items.push([n.s]);
+          else if (k === i) items.push(g.notes.slice(i, j + 1).map(x => x.s));
+        });
+        plans.push({ items, barre: true });
+      }
+    }
+    return plans;
+  };
+  const plans = groups.map(plansFor);
+  let best = null;
+  const walk = (gi, next, cost, nBarres, chosen) => {
+    if (best && cost >= best.cost) return;
+    if (gi === groups.length){ best = { cost, chosen }; return; }
+    const g = groups[gi];
+    for (const plan of plans[gi]){
+      if (plan.barre && nBarres >= 2) continue;
+      const k = plan.items.length;
+      const natural = Math.min(g.f - minF + 1, 5 - k);
+      for (let st = next; st + k - 1 <= 4; st++){
+        let extra = 0, tooFar = false;
+        chosen.forEach(c => {
+          const e = (g.f - c.group.f) - (st - c.last);
+          if (e > 1) tooFar = true; else if (e > 0) extra += 1.2;
+        });
+        if (tooFar) continue;
+        walk(gi + 1, st + k, cost + Math.abs(st - natural) + extra + (plan.barre ? 0.9 : 0) + 0.05 * k, nBarres + (plan.barre ? 1 : 0),
+          chosen.concat([{ group: g, plan, st, last: st + k - 1 }]));
+      }
+    }
+  };
+  walk(0, 1, 0, false, []);
+  if (!best) return null;
+  const barres = [];
+  best.chosen.forEach(c => c.plan.items.forEach((item, k) => {
+    item.forEach(s => { fingers[s] = c.st + k; });
+    if (item.length > 1) barres.push({ fret: c.group.f, from: item[0], to: item[item.length - 1], finger: c.st + k });
+  }));
+  return { fingers, barres };
+}
+
+function guitarVoicingCost(frets, fingerInfo){
+  const played = frets.filter(f => f >= 0);
+  const fretted = frets.filter(f => f > 0);
+  const minF = fretted.length ? Math.min.apply(null, fretted) : 0;
+  const maxF = fretted.length ? Math.max.apply(null, fretted) : 0;
+  let first = 0; while (first < 6 && frets[first] < 0) first++;
+  let last = 5; while (last >= 0 && frets[last] < 0) last--;
+  let inner = 0;
+  for (let s = first; s <= last; s++) if (frets[s] < 0) inner++;
+  const leading = first, trailing = 5 - last;
+  let cost = 0.55 * minF + 0.4 * (maxF - minF);
+  cost -= 0.35 * played.filter(f => f === 0).length;
+  cost += 0.45 * (leading + trailing) + 3.5 * inner;
+  cost += fingerInfo.barres.length ? 1.6 + 0.4 * (fingerInfo.barres.length - 1) : 0;
+  cost += 0.8 * fingerInfo.fingers.filter(f => f > 0).length;
+  if (played.length < 4) cost += 2 * (4 - played.length);
+  return cost;
+}
+
+// Cherche tous les doigtés justes dans des fenêtres de 4 cases (cordes à vide autorisées dans la première fenêtre).
+function searchGuitarVoicings(chord){
+  const reqMask = guitarMaskOf(chord.requiredPcs);
+  const allowMask = reqMask | guitarMaskOf(chord.optionalPcs) | (1 << chord.bassPc);
+  const openPc = GUITAR_TUNING.map(m => m % 12);
+  const minPlayed = chord.power ? 2 : 3;
+  const found = new Map();
+  for (let p = 1; p <= 11; p++){
+    const lo = p, hi = p + 3;
+    const frets = new Array(6);
+    const dfs = (s, mask, played, minF, hasOpen) => {
+      if (s === 6){
+        if (played < minPlayed || (mask & reqMask) !== reqMask) return;
+        let low = 0; while (frets[low] === -1) low++;
+        if ((openPc[low] + frets[low]) % 12 !== chord.bassPc) return;
+        if (p > 1 ? minF !== p : (!hasOpen && minF !== 1)) return;        // chaque doigté n'est retenu que dans sa fenêtre
+        const key = frets.join(',');
+        if (!found.has(key)) found.set(key, frets.slice());
+        return;
+      }
+      frets[s] = -1;
+      dfs(s + 1, mask, played, minF, hasOpen);
+      if (p === 1 && ((allowMask >> openPc[s]) & 1)){
+        frets[s] = 0;
+        dfs(s + 1, mask | (1 << openPc[s]), played + 1, minF, true);
+      }
+      for (let f = lo; f <= hi; f++){
+        const pc = (openPc[s] + f) % 12;
+        if (!((allowMask >> pc) & 1)) continue;
+        frets[s] = f;
+        dfs(s + 1, mask | (1 << pc), played + 1, Math.min(minF, f), hasOpen);
+      }
+    };
+    dfs(0, 0, 0, 99, false);
+  }
+  return Array.from(found.values());
+}
+
+
+// Formes mobiles : fondamentale sur la 6e corde (forme de Mi) ou sur la 5e (forme de La) ; les chiffres sont des écarts
+// par rapport à la case de la fondamentale, -1 = corde non jouée. Chaque forme est revérifiée avant affichage.
+const GUITAR_MOVABLE_SOURCE = [
+  // [symbole de la forme, corde de la fondamentale (0 = Mi grave, 1 = La), écarts]
+  ['E', 0, [0, 2, 2, 1, 0, 0]], ['Em', 0, [0, 2, 2, 0, 0, 0]], ['E7', 0, [0, 2, 0, 1, 0, 0]], ['Em7', 0, [0, 2, 0, 0, 0, 0]],
+  ['Emaj7', 0, [0, 2, 1, 1, 0, 0]], ['Esus4', 0, [0, 2, 2, 2, 0, 0]], ['E6', 0, [0, 2, 2, 1, 2, 0]], ['Em6', 0, [0, 2, 2, 0, 2, 0]],
+  ['E9', 0, [0, 2, 0, 1, 0, 2]], ['Eadd9', 0, [0, 2, 2, 1, 0, 2]], ['E7sus4', 0, [0, 2, 0, 2, 0, 0]], ['E5', 0, [0, 2, 2, -1, -1, -1]],
+  ['Eaug', 0, [0, 3, 2, 1, 1, 0]],
+  ['A', 1, [-1, 0, 2, 2, 2, 0]], ['Am', 1, [-1, 0, 2, 2, 1, 0]], ['A7', 1, [-1, 0, 2, 0, 2, 0]], ['Am7', 1, [-1, 0, 2, 0, 1, 0]],
+  ['Amaj7', 1, [-1, 0, 2, 1, 2, 0]], ['Asus4', 1, [-1, 0, 2, 2, 3, 0]], ['Asus2', 1, [-1, 0, 2, 2, 0, 0]], ['A6', 1, [-1, 0, 2, 2, 2, 2]],
+  ['Am6', 1, [-1, 0, 2, 2, 1, 2]], ['A9', 1, [-1, 0, 2, 4, 2, 3]], ['Aadd9', 1, [-1, 0, 2, 4, 2, 0]], ['Adim', 1, [-1, 0, 1, 2, 1, -1]],
+  ['Am7b5', 1, [-1, 0, 1, 0, 1, -1]], ['A7sus4', 1, [-1, 0, 2, 0, 3, 0]], ['A5', 1, [-1, 0, 2, 2, -1, -1]], ['Aaug', 1, [-1, 0, 3, 2, 2, 1]],
+];
+let GUITAR_MOVABLE = null;
+function guitarMovableFor(chord){
+  if (chord.bass) return [];
+  if (!GUITAR_MOVABLE){
+    GUITAR_MOVABLE = new Map();
+    GUITAR_MOVABLE_SOURCE.forEach(([symbol, string, offsets]) => {
+      const c = parseChord(symbol);
+      const quality = c.key.split('|')[1];
+      if (!GUITAR_MOVABLE.has(quality)) GUITAR_MOVABLE.set(quality, []);
+      GUITAR_MOVABLE.get(quality).push({ string, offsets });
+    });
+  }
+  const out = [];
+  (GUITAR_MOVABLE.get(chord.key.split('|')[1]) || []).forEach(shape => {
+    const fret = ((chord.root.pc - GUITAR_TUNING[shape.string]) % 12 + 12) % 12;
+    if (fret < 1 || fret > 11) return;                                   // case 0 : c'est l'accord à vide, déjà dans la table
+    out.push(shape.offsets.map(o => o < 0 ? -1 : o + fret));
+  });
+  return out;
+}
+
+let GUITAR_CURATED = null;
+function guitarCuratedFor(chord){
+  if (!GUITAR_CURATED){
+    GUITAR_CURATED = new Map();
+    GUITAR_CURATED_SOURCE.forEach(([symbol, frets, fingers]) => {
+      const c = parseChord(symbol);
+      if (!c) return;
+      if (!GUITAR_CURATED.has(c.key)) GUITAR_CURATED.set(c.key, []);
+      GUITAR_CURATED.get(c.key).push({ frets: frets.split('').map(ch => ch === 'x' ? -1 : Number(ch)), fingers: fingers.split('').map(Number) });
+    });
+  }
+  return GUITAR_CURATED.get(chord.key) || [];
+}
+
+// Doigtés d'un accord (jusqu'à 5, de la position la plus basse à la plus haute). Chaque élément :
+// { frets:[6], fingers:[6], barres:[{fret,from,to,finger}], baseFret, source:'table'|'calcul' }
+const guitarVoicingCache = new Map();
+function guitarVoicings(chord, limit){
+  const cacheKey = chord.key + '#' + (limit || 5);
+  if (guitarVoicingCache.has(cacheKey)) return guitarVoicingCache.get(cacheKey);
+  const out = [];
+  const seen = new Set();
+  const push = (frets, fingers, source) => {
+    const key = frets.join(',');
+    if (seen.has(key) || !isValidGuitarVoicing(chord, frets)) return;
+    const given = fingers ? checkFingering(frets, fingers) : null;
+    const info = given ? { fingers: fingers.slice(), barres: given.barres } : assignFingers(frets);
+    if (!info) return;
+    const fretted = frets.filter(f => f > 0);
+    const maxF = fretted.length ? Math.max.apply(null, fretted) : 0;
+    const minF = fretted.length ? Math.min.apply(null, fretted) : 1;
+    seen.add(key);
+    out.push({
+      frets: frets.slice(), fingers: info.fingers, barres: info.barres,
+      baseFret: maxF <= 5 ? 1 : minF, source,
+      cost: guitarVoicingCost(frets, info),
+    });
+  };
+  guitarCuratedFor(chord).forEach(v => push(v.frets, v.fingers, 'table'));
+  guitarMovableFor(chord).forEach(frets => push(frets, null, 'table'));
+  const innerMutes = (frets) => {
+    let a = 0; while (a < 6 && frets[a] < 0) a++;
+    let b = 5; while (b >= 0 && frets[b] < 0) b--;
+    let n = 0; for (let s = a; s <= b; s++) if (frets[s] < 0) n++;
+    return n;
+  };
+  const calculated = searchGuitarVoicings(chord)
+    .map(frets => { const info = assignFingers(frets); return info ? { frets, cost: guitarVoicingCost(frets, info), inner: innerMutes(frets) } : null; })
+    .filter(Boolean)
+    .sort((a, b) => a.cost - b.cost);
+  const clean = calculated.filter(c => c.inner === 0);
+  const pool = clean.length >= 2 ? clean : calculated;
+  const best = pool.length ? pool[0].cost : 0;
+  const zones = new Set(out.map(v => v.zone));
+  out.forEach(v => { const f = v.frets.filter(x => x > 0); v.zone = f.length ? Math.min.apply(null, f) : 0; zones.add(v.zone); });
+  for (const cand of pool){
+    if (out.length >= (limit || 5)) break;
+    if (cand.cost > best + 6) break;
+    const fretted = cand.frets.filter(f => f > 0);
+    const zone = fretted.length ? Math.min.apply(null, fretted) : 0;
+    if (Array.from(zones).some(z => Math.abs(z - zone) < 2)) continue;              // une seule proposition par zone du manche
+    const before = out.length;
+    push(cand.frets, null, 'calcul');
+    if (out.length > before){ out[out.length - 1].zone = zone; zones.add(zone); }
+  }
+  out.sort((a, b) => a.baseFret - b.baseFret || (a.source === 'table' ? 0 : 1) - (b.source === 'table' ? 0 : 1) || a.cost - b.cost);
+  const result = out.slice(0, limit || 5);
+  guitarVoicingCache.set(cacheKey, result);
+  return result;
+}
+
+/* ---------------------------------------------------------------------- piano */
+
+// Notes du clavier (numéros 0 = Do le plus grave affiché, 12 = Do suivant…). La fondamentale est la plus grave,
+// sauf pour un accord renversé (C/E) où la basse passe sous l'accord.
+function pianoVoicing(chord){
+  const chosen = chord.notes.filter(n => n.req || n.role === 'fifth' || (n.role === 'ninth' && (chord.model.ext === 11 || chord.model.ext === 13)));
+  const base = chord.root.pc + (chord.bass ? 12 : 0);
+  const keys = chosen.map(n => ({ midi: base + n.semis, name: n.name, label: n.label, root: n.role === 'root' }));
+  if (chord.bass) keys.unshift({ midi: chord.bass.pc, name: chord.bass.name, label: 'basse', root: false, bass: true });
+  const lowest = keys[0].midi, highest = keys[keys.length - 1].midi;
+  let end = Math.ceil((highest + 1) / 12) * 12;
+  if (end < 24) end = 24;
+  return { keys, start: 0, end, lowest, highest };
+}
+
+
+/* ---------------------------------------------------------------------- dessins (SVG) */
+
+const FRENCH_STRING_NAMES = ['Mi grave', 'La', 'Ré', 'Sol', 'Si', 'Mi aigu'];
+
+function guitarDiagramLabel(chord, v){
+  const bits = v.frets.map((f, s) => FRENCH_STRING_NAMES[s] + (f < 0 ? ' : non jouée' : f === 0 ? ' : à vide' : ' : case ' + f));
+  return 'Doigté de guitare de ' + chord.symbol + '. ' + bits.join(', ') + v.barres.map(b => '. Barré du doigt ' + b.finger + ' à la case ' + b.fret).join('') + '.';
+}
+
+function guitarDiagramSVG(chord, v){
+  const W = 230, H = 276, left = 48, gap = 26, top = 64, rowH = 38, rows = 5;
+  const x = s => left + s * gap;
+  const y = r => top + r * rowH;
+  const base = v.baseFret;
+  let g = '<svg class="chord-svg" width="' + W + '" height="' + H + '" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="' + escapeHTML(guitarDiagramLabel(chord, v)) + '" xmlns="http://www.w3.org/2000/svg">';
+  for (let r = 1; r <= rows; r++) g += '<line x1="' + x(0) + '" y1="' + y(r) + '" x2="' + x(5) + '" y2="' + y(r) + '" stroke="var(--text-faint)" stroke-width="1.3"/>';
+  for (let s = 0; s < 6; s++) g += '<line x1="' + x(s) + '" y1="' + y(0) + '" x2="' + x(s) + '" y2="' + y(rows) + '" stroke="var(--text-muted)" stroke-width="' + (1.1 + (5 - s) * 0.18).toFixed(2) + '"/>';
+  if (base === 1) g += '<line x1="' + (x(0) - 1) + '" y1="' + y(0) + '" x2="' + (x(5) + 1) + '" y2="' + y(0) + '" stroke="var(--text-primary)" stroke-width="6" stroke-linecap="round"/>';
+  else {
+    g += '<line x1="' + x(0) + '" y1="' + y(0) + '" x2="' + x(5) + '" y2="' + y(0) + '" stroke="var(--text-faint)" stroke-width="1.3"/>';
+    g += '<text x="' + (left - 14) + '" y="' + (y(0) + rowH / 2 + 5) + '" text-anchor="end" class="svg-fret-num">' + base + '</text>';
+  }
+  v.frets.forEach((f, s) => {
+    if (f < 0) g += '<text x="' + x(s) + '" y="' + (top - 16) + '" text-anchor="middle" class="svg-mute">×</text>';
+    else if (f === 0) g += '<circle cx="' + x(s) + '" cy="' + (top - 20) + '" r="6" fill="none" stroke="var(--text-primary)" stroke-width="2"/>';
+  });
+  v.barres.forEach(b => {
+    const row = b.fret - base + 1, cy = y(row - 1) + rowH / 2;
+    g += '<rect x="' + (x(b.from) - 11) + '" y="' + (cy - 11) + '" width="' + (x(b.to) - x(b.from) + 22) + '" height="22" rx="11" fill="var(--accent)"/>';
+    g += '<text x="' + x(b.from) + '" y="' + (cy + 5) + '" text-anchor="middle" class="svg-finger">' + b.finger + '</text>';
+  });
+  v.frets.forEach((f, s) => {
+    if (f <= 0 || v.barres.some(b => f === b.fret && s >= b.from && s <= b.to)) return;
+    const row = f - base + 1, cy = y(row - 1) + rowH / 2;
+    g += '<circle cx="' + x(s) + '" cy="' + cy + '" r="11.5" fill="var(--accent)"/>';
+    if (v.fingers[s] > 0) g += '<text x="' + x(s) + '" y="' + (cy + 5) + '" text-anchor="middle" class="svg-finger">' + v.fingers[s] + '</text>';
+  });
+  GUITAR_STRING_LABELS.forEach((n, s) => { g += '<text x="' + x(s) + '" y="' + (H - 8) + '" text-anchor="middle" class="svg-string">' + n + '</text>'; });
+  return g + '</svg>';
+}
+
+function pianoDiagramSVG(chord, piano){
+  const whitePcs = [0, 2, 4, 5, 7, 9, 11];
+  const ww = 30, wh = 124, bw = 19, bh = 76;
+  const pressed = new Map(piano.keys.map(k => [k.midi, k]));
+  let whiteCount = 0;
+  let whites = '', blacks = '';
+  for (let n = piano.start; n <= piano.end; n++){
+    const k = pressed.get(n);
+    if (whitePcs.includes(n % 12)){
+      const fill = k ? (k.bass ? '#8BD0FF' : k.root ? '#FFB648' : '#FFD79A') : '#F1F2F6';
+      const cx = whiteCount * ww;
+      whites += '<rect x="' + cx + '" y="1" width="' + ww + '" height="' + wh + '" rx="3" fill="' + fill + '" stroke="#2A2D3A" stroke-width="1"/>';
+      if (k) whites += '<text x="' + (cx + ww / 2) + '" y="' + (wh - 9) + '" text-anchor="middle" class="svg-key-label">' + escapeHTML(k.name) + '</text>';
+      whiteCount++;
+    } else {
+      const fill = k ? (k.bass ? '#8BD0FF' : k.root ? '#FFB648' : '#FFC46B') : '#12141C';
+      const cx = whiteCount * ww - bw / 2;
+      blacks += '<rect x="' + cx + '" y="1" width="' + bw + '" height="' + bh + '" rx="3" fill="' + fill + '" stroke="#000" stroke-width="1"/>';
+      if (k) blacks += '<text x="' + (cx + bw / 2) + '" y="' + (bh - 8) + '" text-anchor="middle" class="svg-key-label svg-key-small">' + escapeHTML(k.name) + '</text>';
+    }
+  }
+  const label = 'Clavier de piano : ' + piano.keys.map(k => k.name).join(', ') + '.';
+  return '<svg class="chord-svg chord-piano" width="' + (whiteCount * ww + 2) + '" height="' + (wh + 3) + '" viewBox="0 0 ' + (whiteCount * ww + 2) + ' ' + (wh + 3) + '" role="img" aria-label="' + escapeHTML(label) + '" xmlns="http://www.w3.org/2000/svg">' + whites + blacks + '</svg>';
+}
+
+/* ---------------------------------------------------------------------- fenêtre « accord » */
+
+// Accords d'une zone (prompteur ou aperçu) : ceux de la chanson, dans l'ordre d'apparition, sans doublon.
+function collectChordSymbols(container){
+  const seen = new Set(), list = [];
+  if (!container) return list;
+  container.querySelectorAll('.chord').forEach(el => {
+    splitJoinedChords(el.textContent).forEach(sym => {
+      if (!seen.has(sym) && parseChord(sym)){ seen.add(sym); list.push(sym); }
+    });
+  });
+  return list;
+}
+
+function showChord(symbol){
+  const chord = parseChord(symbol);
+  if (!chord) return false;
+  UI.chord.chord = chord;
+  UI.chord.voicings = guitarVoicings(chord);
+  UI.chord.index = 0;
+  renderChordModal();
+  return true;
+}
+
+function renderChordModal(){
+  const chord = UI.chord.chord;
+  if (!chord) return;
+  const view = Store.state.settings.chordView === 'piano' ? 'piano' : 'guitar';
+  document.getElementById('chordTitle').textContent = chord.symbol;
+  document.getElementById('chordReading').textContent = chord.reading ? 'Lu comme ' + chord.reading + ' (notation française).' : '';
+  document.getElementById('chordNotes').innerHTML =
+    'Notes : <b>' + escapeHTML(chord.noteNames.join(' · ')) + '</b> &nbsp;·&nbsp; formule ' + escapeHTML(chord.formula) +
+    (chord.bass ? ' &nbsp;·&nbsp; basse <b>' + escapeHTML(chord.bassName) + '</b>' : '');
+  document.querySelectorAll('#chordInstrument .seg-btn').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.chordView === view)));
+  const diagram = document.getElementById('chordDiagram');
+  const variants = document.getElementById('chordVariants');
+  const tab = document.getElementById('chordTab');
+  if (view === 'piano'){
+    diagram.innerHTML = pianoDiagramSVG(chord, pianoVoicing(chord));
+    variants.hidden = true;
+    tab.textContent = chord.bass ? 'Basse ' + chord.bassName + ' à gauche, puis l\'accord.' : '';
+  } else {
+    const list = UI.chord.voicings;
+    if (!list.length){
+      diagram.innerHTML = '<p class="hint">Pas de doigté simple trouvé pour cet accord à la guitare. Ses notes sont indiquées ci-dessus ; essayez la vue Piano.</p>';
+      variants.hidden = true;
+      tab.textContent = '';
+    } else {
+      const v = list[Math.min(UI.chord.index, list.length - 1)];
+      diagram.innerHTML = guitarDiagramSVG(chord, v);
+      variants.hidden = list.length < 2;
+      document.getElementById('chordVariantLabel').textContent = 'Position ' + (UI.chord.index + 1) + ' / ' + list.length + (v.baseFret > 1 ? ' · case ' + v.baseFret : v.frets.includes(0) ? ' · à vide' : '');
+      tab.textContent = GUITAR_STRING_LABELS.join('  ') + '\n' + v.frets.map(f => f < 0 ? 'x' : String(f)).join('  ');
+    }
+  }
+  const chips = document.getElementById('chordChips');
+  const block = document.getElementById('chordSongBlock');
+  block.hidden = UI.chord.symbols.length < 2;
+  chips.innerHTML = UI.chord.symbols.map(sym =>
+    '<button type="button" class="chord-chip" data-chord-symbol="' + escapeHTML(sym) + '" aria-pressed="' + (sym === chord.symbol) + '">' + escapeHTML(sym) + '</button>').join('');
+}
+
+function openChordModal(symbol, container){
+  const parts = splitJoinedChords(symbol);
+  UI.chord.symbols = collectChordSymbols(container);
+  if (!showChord(parts[0])) return false;
+  hideAllModals();
+  document.getElementById('modalChord').hidden = false;
+  return true;
+}
+
+document.addEventListener('click', (e) => {
+  const el = e.target.closest ? e.target.closest('#prompterContent .chord, #previewPane .chord') : null;
+  if (!el || !Store.state.settings.chordDiagrams) return;
+  const text = el.textContent.trim();
+  const plain = normalizeChordSymbol(text);
+  if (plain === '' || isChordFiller(text) || isChordFiller(plain)) return;   // « | », « x2 », « N.C. », « ... » : pas des accords
+  if (!parseChord(splitJoinedChords(text)[0])){
+    toast('« ' + text + ' » n\'est pas un accord reconnu.', true);
+    return;
+  }
+  if (UI.view === 'prompter') pauseAutoscroll();
+  openChordModal(text, el.closest('#prompterContent, #previewPane'));
+});
+document.getElementById('btnCloseChord').addEventListener('click', () => closeModalEl(document.getElementById('modalChord')));
+document.getElementById('chordInstrument').addEventListener('click', (e) => {
+  const btn = e.target.closest('[data-chord-view]');
+  if (!btn) return;
+  Store.state.settings.chordView = btn.dataset.chordView;
+  Store.save();
+  renderChordModal();
+});
+document.getElementById('btnChordPrev').addEventListener('click', () => {
+  const n = UI.chord.voicings.length;
+  if (n) { UI.chord.index = (UI.chord.index - 1 + n) % n; renderChordModal(); }
+});
+document.getElementById('btnChordNext').addEventListener('click', () => {
+  const n = UI.chord.voicings.length;
+  if (n) { UI.chord.index = (UI.chord.index + 1) % n; renderChordModal(); }
+});
+document.getElementById('chordChips').addEventListener('click', (e) => {
+  const btn = e.target.closest('[data-chord-symbol]');
+  if (btn) showChord(btn.dataset.chordSymbol);
+});
+
+
+/* =========================================================================
+   MÉTRONOME : moteur de temps (clics sonores + battements visuels)
+   =========================================================================
+   Principe des « deux horloges » : un minuteur JavaScript, peu précis, se réveille toutes les 25 ms et planifie à
+   l'avance les temps des 120 prochaines millisecondes. Les clics sont posés sur l'horloge audio (précise à la
+   milliseconde) ; le pulseur, lui, est déclenché à l'heure exacte de chaque temps. Toute la logique de temps
+   repose sur une seule horloge (performance.now, ou une horloge injectée pour les tests) : si le son est
+   indisponible ou suspendu par le navigateur, le décompte et le départ du défilement n'en dépendent donc jamais. */
+
+const METRO_LOOKAHEAD = 0.12;      // secondes planifiées à l'avance
+const METRO_INTERVAL_MS = 25;      // période du minuteur de planification
+const METRO_LEAD = 0.12;           // délai avant le premier temps (laisse l'audio se mettre en route)
+
+const Metro = {
+  clockFn: null,                   // horloge injectable (tests) : renvoie des secondes
+  ctx: null,                       // AudioContext, créé à la première demande de son
+  running: false,
+  finishing: false,                // plus rien à planifier : on attend la distribution des derniers temps
+  timer: null,
+  bpm: 0, beatsPerBar: 4, volume: 0.7,
+  plan: null,
+  counter: 0,                      // numéro du prochain temps depuis le départ (le décompte compte aussi)
+  nextTime: 0,                     // heure du prochain temps à planifier
+  endFired: false,
+  pending: [],                     // temps planifiés, pas encore distribués à l'affichage
+  nodes: [],                       // clics planifiés (pour les annuler à l'arrêt)
+
+  now(){ return this.clockFn ? this.clockFn() : performance.now() / 1000; },
+
+  ensureAudio(){
+    if (!this.ctx){
+      const Ctor = window.AudioContext || window.webkitAudioContext;
+      if (!Ctor) return null;
+      try { this.ctx = new Ctor(); } catch (err){ this.ctx = null; return null; }
+    }
+    if (this.ctx.state === 'suspended' && this.ctx.resume){
+      try { const r = this.ctx.resume(); if (r && r.catch) r.catch(() => {}); } catch (err){ /* refusé : le visuel continue */ }
+    }
+    return this.ctx;
+  },
+
+  // opts : { bpm, beatsPerBar, volume, countInBeats, countIn:{sound,visual}, during:{sound,visual}, onBeat, onCountInEnd, lead }
+  start(opts){
+    this.stop();
+    const bpm = Number(opts.bpm);
+    if (!(bpm >= BPM_MIN && bpm <= BPM_MAX)) return false;
+    const off = { sound: false, visual: false };
+    const plan = {
+      countInBeats: Math.max(0, opts.countInBeats | 0),
+      countIn: opts.countIn || off,
+      during: opts.during || off,
+      onBeat: opts.onBeat || null,
+      onCountInEnd: opts.onCountInEnd || null,
+    };
+    const countInUseful = plan.countInBeats > 0 && (plan.countIn.sound || plan.countIn.visual);
+    if (!countInUseful) plan.countInBeats = 0;
+    if (!countInUseful && !plan.during.sound && !plan.during.visual) return false;      // rien à jouer ni à montrer
+    this.bpm = bpm;
+    this.beatsPerBar = Math.max(1, opts.beatsPerBar | 0) || 4;
+    this.volume = Math.max(0, Math.min(1, Number(opts.volume) || 0));
+    this.plan = plan;
+    if ((countInUseful && plan.countIn.sound) || plan.during.sound) this.ensureAudio();
+    this.running = true;
+    this.finishing = false;
+    this.counter = 0;
+    this.endFired = false;
+    this.pending = [];
+    this.nextTime = this.now() + (opts.lead == null ? METRO_LEAD : opts.lead);
+    this.timer = setInterval(() => { this.tick(); this.pump(); }, METRO_INTERVAL_MS);
+    this.tick();
+    return true;
+  },
+
+  stop(){
+    if (this.timer){ clearInterval(this.timer); this.timer = null; }
+    this.running = false;
+    this.finishing = false;
+    this.pending = [];
+    // les clics déjà posés sur l'horloge audio mais pas encore joués sont annulés
+    this.nodes.forEach(n => { try { n.osc.stop(); n.osc.disconnect(); } catch (err){ /* déjà terminé */ } });
+    this.nodes = [];
+  },
+
+  setTempo(bpm){ const n = Number(bpm); if (n >= BPM_MIN && n <= BPM_MAX) this.bpm = n; },
+  setVolume(v){ this.volume = Math.max(0, Math.min(1, Number(v) || 0)); },
+
+  tick(){
+    if (!this.running || this.finishing) return;
+    const now = this.now();
+    const period = 60 / this.bpm;
+    // Après une longue interruption (page en veille), on saute les temps manqués au lieu de les rejouer en rafale.
+    if (this.nextTime < now - 0.1){
+      const missed = Math.ceil((now - this.nextTime) / period);
+      this.nextTime += missed * period;
+      this.counter += missed;
+    }
+    let guard = 0;
+    while (this.running && !this.finishing && this.nextTime < now + METRO_LOOKAHEAD && guard++ < 64){
+      this.scheduleBeat(this.nextTime);
+      this.nextTime += period;
+    }
+  },
+
+  scheduleBeat(time){
+    const plan = this.plan;
+    const index = this.counter++;
+    const inCountIn = index < plan.countInBeats;
+    const beat = (inCountIn ? index : index - plan.countInBeats) % this.beatsPerBar;
+    const out = inCountIn ? plan.countIn : plan.during;
+    const first = plan.countInBeats > 0 && !inCountIn && !this.endFired;      // premier temps qui suit le décompte
+    if (first) this.endFired = true;
+    if (out.sound) this.click(time, beat === 0);
+    this.pending.push({
+      time, beat, bpm: this.bpm, beatsPerBar: this.beatsPerBar,
+      countIn: inCountIn, accent: beat === 0, visual: !!out.visual, sound: !!out.sound, first,
+    });
+    // décompte seul : après le premier temps du morceau, il n'y a plus rien à planifier
+    if (!inCountIn && !plan.during.sound && !plan.during.visual) this.finishing = true;
+    const wait = Math.max(0, (time - this.now()) * 1000);
+    setTimeout(() => this.pump(), wait);
+  },
+
+  // distribue à l'affichage les temps dont l'heure est venue
+  pump(){
+    const now = this.now();
+    while (this.pending.length && this.pending[0].time <= now + 0.002){
+      const ev = this.pending.shift();
+      const plan = this.plan;
+      try {
+        if (ev.first && plan.onCountInEnd) plan.onCountInEnd(ev);
+        if (plan.onBeat) plan.onBeat(ev);
+      } catch (err){ console.error(err); }
+      if (!this.running) return;
+    }
+    if (this.finishing && this.running && !this.pending.length) this.stop();
+  },
+
+  click(time, accent){
+    const ctx = this.ctx;
+    if (!ctx) return;
+    try {
+      const at = ctx.currentTime + (time - this.now());      // heure du temps, convertie sur l'horloge audio
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.value = accent ? 1568 : 1046.5;           // sol aigu au premier temps, do aigu aux autres
+      const peak = Math.max(0.02, this.volume) * (accent ? 1 : 0.75);
+      gain.gain.setValueAtTime(0.0001, at);
+      gain.gain.exponentialRampToValueAtTime(peak, at + 0.003);
+      gain.gain.exponentialRampToValueAtTime(0.0001, at + 0.07);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(at);
+      osc.stop(at + 0.09);
+      this.nodes.push({ osc, at });
+      if (this.nodes.length > 24) this.nodes.splice(0, this.nodes.length - 24);
+    } catch (err){ /* son indisponible : le métronome visuel continue */ }
+  },
+};
+
+function outputFlags(mode){ return { sound: mode === 'sound' || mode === 'both', visual: mode === 'visual' || mode === 'both' }; }
+function beatsPerBarOf(song){ return TIME_SIGNATURES[normalizeTimeSignature(song && song.timeSig)]; }
+
+// Tempo à la volée : chaque frappe est un instant ; le tempo est la moyenne des intervalles récents.
+function registerTap(nowMs){
+  const taps = UI.metro.taps;
+  const meanInterval = () => taps.length > 1 ? (taps[taps.length - 1] - taps[0]) / (taps.length - 1) : 0;
+  if (taps.length){
+    const gap = nowMs - taps[taps.length - 1];
+    if (gap > 2000) taps.length = 0;                                          // plus lent que 30 BPM : nouvelle série
+    else if (gap < 200 || (taps.length > 1 && gap < meanInterval() * 0.4)){   // rebond ou double frappe : ignorée
+      const mean = meanInterval();
+      return mean ? normalizeBpm(60000 / mean) : 0;
+    }
+  }
+  taps.push(nowMs);
+  if (taps.length > 8) taps.shift();
+  const mean = meanInterval();
+  return mean ? normalizeBpm(60000 / mean) : 0;
+}
+
+function populateTimeSignatureOptions(){
+  const labels = { '3/4': '3/4 (valse)', '2/2': '2/2 (alla breve)', '6/8': '6/8 (2 temps)', '9/8': '9/8 (3 temps)', '12/8': '12/8 (4 temps)' };
+  ['inputTimeSig', 'metroTimeSig'].forEach(id => {
+    const select = document.getElementById(id);
+    select.innerHTML = Object.keys(TIME_SIGNATURES).map(sig => '<option value="' + sig + '">' + (labels[sig] || sig) + '</option>').join('');
+    select.value = DEFAULT_TIME_SIGNATURE;
+  });
+}
+
+/* ---- essai du métronome (éditeur et fenêtre du prompteur) ---- */
+
+function startMetronomeTest(bpm, beatsPerBar, where){
+  UI.metro.testing = where;
+  const started = Metro.start({
+    bpm, beatsPerBar, volume: Store.state.settings.metronome.volume,
+    countInBeats: 0, during: { sound: true, visual: true }, onBeat: onTestBeat,
+  });
+  if (!started) UI.metro.testing = false;
+  updateTestButtons();
+  return started;
+}
+function stopMetronomeTest(){
+  if (!UI.metro.testing) return;
+  UI.metro.testing = false;
+  Metro.stop();
+  updateTestButtons();
+}
+function onTestBeat(ev){
+  if (UI.metro.testing === 'modal'){
+    document.querySelectorAll('#metroBeats .metro-dot').forEach((dot, k) => dot.classList.toggle('on', k === ev.beat));
+  } else if (UI.metro.testing === 'editor'){
+    const btn = document.getElementById('btnEditorMetro');
+    btn.classList.add('is-beat');
+    setTimeout(() => btn.classList.remove('is-beat'), 90);
+  }
+}
+function updateTestButtons(){
+  const testing = UI.metro.testing;
+  document.getElementById('btnEditorMetro').innerHTML = testing === 'editor' ? '&#9632; Arrêter' : '&#9654; Écouter';
+  document.getElementById('btnMetroTest').innerHTML = testing === 'modal' ? '&#9632; Arrêter' : '&#9654; Tester';
+  if (testing !== 'modal') document.querySelectorAll('#metroBeats .metro-dot').forEach(dot => dot.classList.remove('on'));
+  if (testing !== 'editor') document.getElementById('btnEditorMetro').classList.remove('is-beat');
+  updateMetroButton();
+}
 
 /* =========================================================================
    VUE PROMPTEUR (le coeur de l'application)
@@ -3302,6 +4862,10 @@ function getPrompterNavList(){
   if (ctx && ctx.type === 'playlist'){
     const pl = Store.getPlaylist(ctx.playlistId);
     if (pl) return pl.songIds.slice();
+  }
+  if (ctx && Array.isArray(ctx.ids)){
+    const ids = ctx.ids.filter(id => !!Store.getSong(id));
+    if (ids.length) return ids;
   }
   return Store.state.songs.map(s => s.id);
 }
@@ -3353,9 +4917,19 @@ function renderPrompterSong(){
 
   const navList = getPrompterNavList();
   const idx = navList.indexOf(UI.prompter.songId);
-  document.getElementById('btnPrevSong').disabled = idx <= 0;
-  document.getElementById('btnNextSong').disabled = idx === -1 || idx >= navList.length - 1;
+  const prevSong = idx > 0 ? Store.getSong(navList[idx - 1]) : null;
+  const nextSong = idx !== -1 && idx < navList.length - 1 ? Store.getSong(navList[idx + 1]) : null;
+  const prevBtn = document.getElementById('btnPrevSong');
+  const nextBtn = document.getElementById('btnNextSong');
+  prevBtn.disabled = !prevSong;
+  nextBtn.disabled = !nextSong;
+  const prevLabel = prevSong ? 'Chanson précédente : ' + prevSong.title : 'Chanson précédente (vous êtes à la première)';
+  const nextLabel = nextSong ? 'Chanson suivante : ' + nextSong.title : 'Chanson suivante (vous êtes à la dernière)';
+  prevBtn.title = prevLabel; prevBtn.setAttribute('aria-label', prevLabel);
+  nextBtn.title = nextLabel; nextBtn.setAttribute('aria-label', nextLabel);
+  document.getElementById('prompterPosition').textContent = (navList.length > 1 && idx !== -1) ? (idx + 1) + ' / ' + navList.length : '';
 
+  updateMetroButton();
   updatePlayButtonUI();
 }
 
@@ -3374,12 +4948,10 @@ function startAutoscroll(){
     const dt = Math.min((timestamp - UI.prompter.lastFrameTime) / 1000, 0.25);
     UI.prompter.lastFrameTime = timestamp;
     const song = Store.getSong(UI.prompter.songId);
-    const speed = song ? (song.scrollSpeed || 5) : 5;
-    // Echelle geometrique (et non lineaire) : chaque cran multiplie la vitesse par ~1.33,
-    // pour un ecart proportionnel constant entre deux crans consecutifs, du plus lent (1)
-    // au plus rapide (10) — une echelle lineaire fait paraitre les derniers crans presque
-    // identiques entre eux alors que les premiers doublent la vitesse.
-    const pxPerSecond = 12 * Math.pow(1.33, speed - 1);
+    const speed = song ? (song.scrollSpeed || SPEED_LEVEL_DEFAULT) : SPEED_LEVEL_DEFAULT;
+    // Echelle geometrique (+25 % par cran, ecart proportionnel constant entre deux crans) et relative a la taille du
+    // texte : agrandir les caracteres allonge la chanson, la vitesse suit, donc la duree du defilement ne change pas.
+    const pxPerSecond = scrollPxPerSecond(speed, Store.state.settings.fontSize);
     const scrollEl = document.getElementById('prompterScroll');
 
     // Les navigateurs arrondissent scrollTop a l'entier : ajouter directement une fraction
@@ -3403,28 +4975,250 @@ function startAutoscroll(){
 }
 function pauseAutoscroll(){
   UI.prompter.isPlaying = false;
+  UI.prompter.countingIn = false;
+  stopPrompterMetronome();
   if (UI.prompter.rafId) cancelAnimationFrame(UI.prompter.rafId);
   UI.prompter.rafId = null;
   updatePlayButtonUI();
 }
 function toggleAutoscroll(){
-  if (UI.prompter.isPlaying) pauseAutoscroll(); else startAutoscroll();
+  if (UI.prompter.isPlaying || UI.prompter.countingIn) pauseAutoscroll(); else playPrompter();
 }
+
+/* Lecture : un décompte d'une mesure si le réglage le demande et que la chanson a un tempo ; le texte part alors
+   exactement sur le premier temps qui suit. Sinon, le défilement démarre tout de suite (et le pulseur / le clic
+   accompagnent le morceau si le réglage « pendant le morceau » les demande). */
+function playPrompter(){
+  const song = Store.getSong(UI.prompter.songId);
+  if (!song) return;
+  const wantsCountIn = Store.state.settings.metronome.countIn !== 'off';
+  if (wantsCountIn && song.bpm){
+    UI.prompter.countingIn = true;
+    updatePlayButtonUI();
+    if (startPrompterMetronome(true)) return;
+    UI.prompter.countingIn = false;
+  } else if (wantsCountIn){
+    warnNoTempo(song);
+  }
+  startAutoscroll();
+  startPrompterMetronome(false);
+}
+function startPrompterMetronome(withCountIn){
+  const song = Store.getSong(UI.prompter.songId);
+  const m = Store.state.settings.metronome;
+  if (!song || !song.bpm) return false;
+  UI.metro.testing = false;
+  const countIn = outputFlags(m.countIn);
+  const beatsPerBar = beatsPerBarOf(song);
+  const started = Metro.start({
+    bpm: song.bpm, beatsPerBar, volume: m.volume,
+    countInBeats: withCountIn ? beatsPerBar : 0, countIn, during: outputFlags(m.during),
+    onBeat: onPrompterBeat,
+    onCountInEnd: () => { UI.prompter.countingIn = false; startAutoscroll(); updatePlayButtonUI(); },
+  });
+  updateMetroButton();
+  return started;
+}
+function stopPrompterMetronome(){
+  UI.metro.testing = false;
+  if (Metro.running || Metro.pending.length) Metro.stop();
+  const pulse = document.getElementById('metroPulse');
+  pulse.hidden = true;
+  pulse.classList.remove('is-countin', 'flash', 'is-accent');
+  updateTestButtons();
+}
+function warnNoTempo(song){
+  if (UI.metro.warnedNoTempo.has(song.id)) return;
+  UI.metro.warnedNoTempo.add(song.id);
+  toast('Pas de tempo pour cette chanson : lancement sans décompte.', false, { label: 'Régler', onClick: openMetronomeModal });
+}
+
+// Un temps arrive : le pulseur s'allume (grand et numéroté pendant le décompte, petit et discret ensuite).
+function onPrompterBeat(ev){
+  if (UI.view !== 'prompter' || !ev.visual) return;
+  const pulse = document.getElementById('metroPulse');
+  const num = document.getElementById('metroPulseNum');
+  pulse.hidden = false;
+  pulse.classList.toggle('is-countin', ev.countIn);
+  pulse.classList.toggle('is-accent', ev.accent);
+  num.textContent = ev.countIn ? String(ev.beat + 1) : '';
+  pulse.dataset.beat = String(ev.beat + 1);
+  pulse.dataset.flashes = String((Number(pulse.dataset.flashes) || 0) + 1);
+  if (pulse.animate){
+    pulse.animate(
+      [{ opacity: 1, transform: 'scale(' + (ev.accent ? 1.6 : 1.3) + ')' }, { opacity: ev.countIn ? 0.9 : 0.3, transform: 'scale(1)' }],
+      { duration: Math.min(380, 60000 / ev.bpm * 0.8), easing: 'ease-out' }
+    );
+  } else {
+    pulse.classList.add('flash');
+    setTimeout(() => pulse.classList.remove('flash'), 90);
+  }
+}
+
+function updateMetroButton(){
+  const song = Store.getSong(UI.prompter.songId);
+  const bpm = song && song.bpm ? song.bpm : 0;
+  const btn = document.getElementById('btnMetronome');
+  document.getElementById('metroBtnLabel').textContent = bpm ? String(bpm) : '—';
+  btn.classList.toggle('is-running', Metro.running);
+  const label = bpm ? 'Métronome : ' + bpm + ' BPM, mesure ' + normalizeTimeSignature(song.timeSig) : 'Métronome : aucun tempo renseigné';
+  btn.title = label + ' (réglages)';
+  btn.setAttribute('aria-label', label);
+}
+
+/* ---- fenêtre du métronome ---- */
+
+function renderMetronomeBeats(){
+  const song = Store.getSong(UI.prompter.songId);
+  const n = beatsPerBarOf(song);
+  let html = '';
+  for (let k = 0; k < n; k++) html += '<span class="metro-dot' + (k === 0 ? ' is-first' : '') + '"></span>';
+  document.getElementById('metroBeats').innerHTML = html;
+}
+function fillMetronomeModal(){
+  const song = Store.getSong(UI.prompter.songId);
+  const m = Store.state.settings.metronome;
+  document.getElementById('metroSongName').textContent = song ? song.title : '';
+  document.getElementById('metroBpm').value = song && song.bpm ? song.bpm : '';
+  document.getElementById('metroTimeSig').value = normalizeTimeSignature(song && song.timeSig);
+  document.getElementById('metroVolume').value = m.volume;
+  document.querySelectorAll('#modalMetronome .segmented').forEach(group => {
+    const current = m[group.dataset.metroSetting];
+    group.querySelectorAll('.seg-btn').forEach(btn => btn.setAttribute('aria-pressed', String(btn.dataset.value === current)));
+  });
+  renderMetronomeBeats();
+  updateTestButtons();
+}
+function openMetronomeModal(){
+  if (!Store.getSong(UI.prompter.songId)) return;
+  pauseAutoscroll();
+  hideAllModals();
+  fillMetronomeModal();
+  document.getElementById('modalMetronome').hidden = false;
+}
+function onMetronomeModalClosed(){
+  stopMetronomeTest();
+  updateMetroButton();
+}
+// Le tempo et la mesure appartiennent à la chanson : ils sont enregistrés tout de suite.
+function applySongTempo(bpm){
+  const song = Store.getSong(UI.prompter.songId);
+  if (!song) return;
+  song.bpm = normalizeBpm(bpm);
+  song.updatedAt = Date.now();
+  Store.save();
+  document.getElementById('metroBpm').value = song.bpm || '';
+  if (UI.metro.testing && song.bpm) Metro.setTempo(song.bpm);
+  updateMetroButton();
+}
+document.getElementById('btnMetronome').addEventListener('click', openMetronomeModal);
+document.getElementById('btnCloseMetronome').addEventListener('click', () => closeModalEl(document.getElementById('modalMetronome')));
+document.getElementById('metroBpm').addEventListener('change', (e) => {
+  const raw = e.target.value.trim();
+  if (raw === ''){ applySongTempo(0); return; }
+  if (!normalizeBpm(raw)){
+    toast('Le tempo doit être compris entre ' + BPM_MIN + ' et ' + BPM_MAX + ' BPM.', true);
+    const song = Store.getSong(UI.prompter.songId);
+    e.target.value = song && song.bpm ? song.bpm : '';
+    return;
+  }
+  applySongTempo(raw);
+});
+document.getElementById('btnMetroDown').addEventListener('click', () => {
+  const song = Store.getSong(UI.prompter.songId);
+  applySongTempo(Math.max(BPM_MIN, ((song && song.bpm) || 100) - 1));
+});
+document.getElementById('btnMetroUp').addEventListener('click', () => {
+  const song = Store.getSong(UI.prompter.songId);
+  applySongTempo(Math.min(BPM_MAX, ((song && song.bpm) || 99) + 1));
+});
+document.getElementById('btnMetroTap').addEventListener('click', () => {
+  const bpm = registerTap(performance.now());
+  if (bpm) applySongTempo(bpm);
+});
+document.getElementById('metroTimeSig').addEventListener('change', (e) => {
+  const song = Store.getSong(UI.prompter.songId);
+  if (!song) return;
+  song.timeSig = normalizeTimeSignature(e.target.value);
+  song.updatedAt = Date.now();
+  Store.save();
+  renderMetronomeBeats();
+  updateMetroButton();
+  if (UI.metro.testing === 'modal'){ stopMetronomeTest(); document.getElementById('btnMetroTest').click(); }
+});
+document.getElementById('modalMetronome').addEventListener('click', (e) => {
+  const btn = e.target.closest('.seg-btn');
+  if (!btn) return;
+  const group = btn.closest('.segmented');
+  Store.state.settings.metronome[group.dataset.metroSetting] = btn.dataset.value;
+  Store.save();
+  group.querySelectorAll('.seg-btn').forEach(b => b.setAttribute('aria-pressed', String(b === btn)));
+});
+document.getElementById('metroVolume').addEventListener('input', (e) => {
+  Store.state.settings.metronome.volume = Number(e.target.value);
+  Metro.setVolume(Store.state.settings.metronome.volume);
+});
+document.getElementById('metroVolume').addEventListener('change', () => Store.save());
+document.getElementById('btnMetroTest').addEventListener('click', () => {
+  if (UI.metro.testing === 'modal'){ stopMetronomeTest(); return; }
+  const song = Store.getSong(UI.prompter.songId);
+  if (!song || !song.bpm){
+    toast('Entrez d\'abord un tempo entre ' + BPM_MIN + ' et ' + BPM_MAX + ' BPM.', true);
+    document.getElementById('metroBpm').focus();
+    return;
+  }
+  startMetronomeTest(song.bpm, beatsPerBarOf(song), 'modal');
+});
+
 function updatePlayButtonUI(){
   const btn = document.getElementById('btnPlayPause');
-  const active = UI.prompter.isPlaying;
+  const active = UI.prompter.isPlaying || UI.prompter.countingIn;
   btn.innerHTML = active ? ICON.pause : ICON.play;
   btn.classList.toggle('is-playing', active);
-  btn.setAttribute('aria-label', active ? 'Arrêter' : 'Démarrer le défilement');
+  btn.setAttribute('aria-label', UI.prompter.countingIn ? 'Annuler le décompte' : (active ? 'Arrêter' : 'Démarrer le défilement'));
 }
 document.getElementById('btnPlayPause').addEventListener('click', toggleAutoscroll);
 
 document.getElementById('prompterScroll').addEventListener('wheel', () => {
-  if (UI.prompter.isPlaying) pauseAutoscroll();
+  if (UI.prompter.isPlaying || UI.prompter.countingIn) pauseAutoscroll();
 }, { passive: true });
-document.getElementById('prompterScroll').addEventListener('touchstart', () => {
-  if (UI.prompter.isPlaying) pauseAutoscroll();
-}, { passive: true });
+
+/* Un doigt posé sur le texte arrête le défilement automatique. Sur tablette, deux protections évitent que le système
+   reprenne un geste de défilement à son compte (sortie du plein écran, retour en arrière) :
+   - le texte n'est jamais posé exactement en butée quand le doigt arrive : aucun geste ne « déborde » vers la page ;
+   - le CSS (overscroll-behavior, touch-action) limite le tactile au défilement vertical. */
+function keepScrollAwayFromEdges(el){
+  const max = el.scrollHeight - el.clientHeight;
+  if (max < 4) return;
+  if (el.scrollTop <= 0) el.scrollTop = 1;
+  else if (el.scrollTop >= max) el.scrollTop = max - 1;
+}
+const swipeStart = { x: 0, y: 0, t: 0, active: false };
+(() => {
+  const el = document.getElementById('prompterScroll');
+  el.addEventListener('touchstart', (e) => {
+    UI.prompter.lastTouchAt = Date.now();
+    if (UI.prompter.isPlaying || UI.prompter.countingIn) pauseAutoscroll();
+    keepScrollAwayFromEdges(el);
+    const touches = e.touches || [];
+    swipeStart.active = touches.length === 1;
+    if (swipeStart.active){ swipeStart.x = touches[0].clientX; swipeStart.y = touches[0].clientY; swipeStart.t = Date.now(); }
+  }, { passive: true });
+  el.addEventListener('touchmove', () => { UI.prompter.lastTouchAt = Date.now(); }, { passive: true });
+  el.addEventListener('touchend', (e) => {
+    UI.prompter.lastTouchAt = Date.now();
+    if (!swipeStart.active) return;
+    swipeStart.active = false;
+    if (!Store.state.settings.swipeNav) return;
+    const end = (e.changedTouches || [])[0];
+    if (!end) return;
+    const dx = end.clientX - swipeStart.x;
+    const dy = end.clientY - swipeStart.y;
+    const wide = Math.max(90, (el.clientWidth || window.innerWidth) * 0.25);
+    // geste franc : long, rapide et presque horizontal (un défilement vertical qui dérive ne change jamais de chanson)
+    if (Date.now() - swipeStart.t < 800 && Math.abs(dx) > wide && Math.abs(dy) < Math.abs(dx) * 0.4) navigatePrompter(dx < 0 ? 1 : -1);
+  }, { passive: true });
+})();
 
 /* ---- réglages en direct : vitesse / taille / capo ---- */
 
@@ -3437,7 +5231,7 @@ document.querySelector('.prompter-controls').addEventListener('click', (e) => {
 
   if (action === 'speed-down' || action === 'speed-up'){
     const delta = action === 'speed-up' ? 1 : -1;
-    song.scrollSpeed = clamp((song.scrollSpeed || 5) + delta, 1, 10);
+    song.scrollSpeed = clamp((song.scrollSpeed || SPEED_LEVEL_DEFAULT) + delta, 1, 10);
     Store.save();
     document.getElementById('speedValue').textContent = song.scrollSpeed;
   } else if (action === 'font-down' || action === 'font-up'){
@@ -3454,28 +5248,60 @@ document.querySelector('.prompter-controls').addEventListener('click', (e) => {
   }
 });
 
-/* ---- plein écran ---- */
+/* ---- plein écran ----
+   C'est la page entière qui passe en plein écran (et non la seule vue du prompteur) : les fenêtres (accords, métronome,
+   partage) et les notifications font partie de la page, elles restent donc visibles. */
 
-document.getElementById('btnPrompterFullscreen').addEventListener('click', () => {
-  const el = document.getElementById('viewPrompter');
-  const isFs = document.fullscreenElement || document.webkitFullscreenElement;
+function isFullscreenActive(){ return !!(document.fullscreenElement || document.webkitFullscreenElement); }
+function fullscreenSupported(){
+  const el = document.documentElement;
+  return !!(el.requestFullscreen || el.webkitRequestFullscreen);
+}
+function requestAppFullscreen(){
+  const el = document.documentElement;
   try {
-    if (!isFs){
-      if (el.requestFullscreen) el.requestFullscreen().catch(() => {});
-      else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
-    } else {
-      if (document.exitFullscreen) document.exitFullscreen().catch(() => {});
-      else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
-    }
+    const result = el.requestFullscreen ? el.requestFullscreen() : (el.webkitRequestFullscreen ? el.webkitRequestFullscreen() : null);
+    if (result && result.catch) result.catch(() => {});
   } catch (err){ /* API plein écran indisponible : on ignore silencieusement */ }
+}
+function exitAppFullscreen(){
+  try {
+    const result = document.exitFullscreen ? document.exitFullscreen() : (document.webkitExitFullscreen ? document.webkitExitFullscreen() : null);
+    if (result && result.catch) result.catch(() => {});
+  } catch (err){ /* idem */ }
+}
+document.getElementById('btnPrompterFullscreen').addEventListener('click', () => {
+  if (isFullscreenActive()){
+    UI.prompter.fullscreenWanted = false;
+    exitAppFullscreen();
+  } else {
+    UI.prompter.fullscreenWanted = true;
+    requestAppFullscreen();
+  }
 });
 function updateFullscreenIcon(){
   const btn = document.getElementById('btnPrompterFullscreen');
-  const isFs = !!(document.fullscreenElement || document.webkitFullscreenElement);
+  const isFs = isFullscreenActive();
   btn.innerHTML = isFs ? ICON.compress : ICON.expand;
+  btn.setAttribute('aria-label', isFs ? 'Quitter le plein écran' : 'Plein écran');
 }
-document.addEventListener('fullscreenchange', updateFullscreenIcon);
-document.addEventListener('webkitfullscreenchange', updateFullscreenIcon);
+// Sur tablette, le système peut quitter le plein écran à la place de l'utilisateur pendant un défilement au doigt.
+// Une sortie qui suit de près un toucher du prompteur est donc proposée à l'annulation, en un geste.
+function onFullscreenChange(){
+  updateFullscreenIcon();
+  if (isFullscreenActive() || !UI.prompter.fullscreenWanted || UI.view !== 'prompter') return;
+  if (Date.now() - UI.prompter.lastTouchAt < 1500){
+    if (UI.prompter.fsToast && document.body.contains(UI.prompter.fsToast)) return;
+    UI.prompter.fsToast = toast('Plein écran interrompu par le tactile.', false, {
+      label: 'Rétablir',
+      onClick: () => { UI.prompter.fullscreenWanted = true; requestAppFullscreen(); },
+    });
+  } else {
+    UI.prompter.fullscreenWanted = false;      // sortie voulue (touche Échap, bouton du navigateur…) : on ne la conteste pas
+  }
+}
+document.addEventListener('fullscreenchange', onFullscreenChange);
+document.addEventListener('webkitfullscreenchange', onFullscreenChange);
 
 /* ---- navigation précédent / suivant ---- */
 
@@ -3505,7 +5331,7 @@ document.getElementById('btnPrompterEdit').addEventListener('click', () => {
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape'){
     const openModal = document.querySelector('.modal-overlay:not([hidden])');
-    if (openModal){ openModal.hidden = true; return; }
+    if (openModal){ closeModalEl(openModal); return; }
     if (UI.view === 'library' && UI.selectMode){ setSelectMode(false); return; }
     if (UI.view === 'prompter' && !document.fullscreenElement && !document.webkitFullscreenElement){
       showView('library');
@@ -3513,8 +5339,10 @@ document.addEventListener('keydown', (e) => {
     return;
   }
   if (UI.view !== 'prompter') return;
+  // une fenêtre ouverte (métronome, accords…) garde le clavier : Espace ne doit pas lancer le défilement en coulisses
+  if (document.querySelector('.modal-overlay:not([hidden])')) return;
   const activeTag = document.activeElement && document.activeElement.tagName;
-  if (activeTag === 'INPUT' || activeTag === 'TEXTAREA') return;
+  if (activeTag === 'INPUT' || activeTag === 'TEXTAREA' || activeTag === 'SELECT') return;
   switch (e.key){
     case ' ':
       e.preventDefault();
@@ -3536,6 +5364,19 @@ document.addEventListener('keydown', (e) => {
       e.preventDefault();
       document.getElementById('prompterScroll').scrollTop += 80;
       break;
+    // pédales tourne-pages : « page suivante / précédente » fait défiler d'un écran (moins une marge de lecture)
+    case 'PageDown': {
+      e.preventDefault();
+      const el = document.getElementById('prompterScroll');
+      el.scrollTop += Math.round((el.clientHeight || 500) * 0.85);
+      break;
+    }
+    case 'PageUp': {
+      e.preventDefault();
+      const el = document.getElementById('prompterScroll');
+      el.scrollTop -= Math.round((el.clientHeight || 500) * 0.85);
+      break;
+    }
     case 'f':
     case 'F':
       document.getElementById('btnPrompterFullscreen').click();
@@ -3561,8 +5402,19 @@ function updateLastExportInfo(){
   el.classList.toggle('hint-accent', days > 14);
 }
 
+document.getElementById('optChordDiagrams').addEventListener('change', (e) => {
+  Store.state.settings.chordDiagrams = e.target.checked;
+  Store.save();
+});
+document.getElementById('optSwipeNav').addEventListener('change', (e) => {
+  Store.state.settings.swipeNav = e.target.checked;
+  Store.save();
+});
 document.getElementById('btnSettings').addEventListener('click', () => {
   hideAllModals();
+  document.getElementById('optSwipeNav').checked = !!Store.state.settings.swipeNav;
+  document.getElementById('optChordDiagrams').checked = Store.state.settings.chordDiagrams !== false;
+  document.getElementById('optShareBase').value = Store.state.settings.shareBaseUrl || '';
   updateLastExportInfo();
   renderDriveSection();
   document.getElementById('modalSettings').hidden = false;
@@ -3832,11 +5684,7 @@ function handleImportedText(filename, rawText){
 
   if (parsed && Array.isArray(parsed.songs) && Array.isArray(parsed.playlists)){
     showConfirm('Importer les données', 'Ceci remplacera toutes vos chansons et playlists actuelles par le contenu du fichier. Continuer ?', () => {
-      Store.state = Object.assign(defaultState(), parsed);
-      Store.state.settings = Object.assign({ ...DEFAULT_SETTINGS }, parsed.settings || {});
-      if (!Array.isArray(Store.state.songs)) Store.state.songs = [];
-      if (!Array.isArray(Store.state.playlists)) Store.state.playlists = [];
-      Store.normalizeState();
+      Store.adopt(parsed);
       Store.save();
       UI.currentPlaylistId = null;
       document.getElementById('modalSettings').hidden = true;
@@ -3868,6 +5716,657 @@ document.getElementById('importFileInput').addEventListener('change', (e) => {
     e.target.value = '';
   };
   reader.readAsText(file);
+});
+
+/* =========================================================================
+   PARTAGE D'UNE FICHE : QR CODE, LIEN, IMPORT
+   ========================================================================= */
+
+/* =========================================================================
+   QR CODE : encodeur local (aucun service en ligne, aucune bibliothèque)
+   =========================================================================
+   Mode « octets », versions 1 à 40, correction d'erreur L / M, 8 masques essayés (le moins pénalisé est gardé).
+   Chaque code produit a été relu par deux décodeurs indépendants (jsQR et OpenCV). */
+const QR = (() => {
+  // Octets de correction par bloc et nombre de blocs, selon le niveau (L, M) et la version (l'indice 0 ne sert pas)
+  const ECC_PER_BLOCK = {
+    L: [-1, 7, 10, 15, 20, 26, 18, 20, 24, 30, 18, 20, 24, 26, 30, 22, 24, 28, 30, 28, 28, 28, 28, 30, 30, 26, 28, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30],
+    M: [-1, 10, 16, 26, 18, 24, 16, 18, 22, 22, 26, 30, 22, 22, 24, 24, 28, 28, 26, 26, 26, 26, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28],
+  };
+  const NUM_BLOCKS = {
+    L: [-1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 4, 4, 4, 4, 4, 6, 6, 6, 6, 7, 8, 8, 9, 9, 10, 12, 12, 12, 13, 14, 15, 16, 17, 18, 19, 19, 20, 21, 22, 24, 25],
+    M: [-1, 1, 1, 1, 2, 2, 4, 4, 4, 5, 5, 5, 8, 9, 9, 10, 10, 11, 13, 14, 16, 17, 17, 18, 20, 21, 23, 25, 26, 28, 29, 31, 33, 35, 37, 38, 40, 43, 45, 47, 49],
+  };
+  const FORMAT_BITS = { L: 1, M: 0 };
+
+  const rawModules = (ver) => {
+    let r = (16 * ver + 128) * ver + 64;
+    if (ver >= 2){
+      const n = Math.floor(ver / 7) + 2;
+      r -= (25 * n - 10) * n - 55;
+      if (ver >= 7) r -= 36;
+    }
+    return r;
+  };
+  const dataCodewords = (ver, ecc) => Math.floor(rawModules(ver) / 8) - ECC_PER_BLOCK[ecc][ver] * NUM_BLOCKS[ecc][ver];
+
+  const alignPositions = (ver) => {
+    if (ver === 1) return [];
+    const n = Math.floor(ver / 7) + 2;
+    const step = ver === 32 ? 26 : Math.ceil((ver * 4 + 4) / (n * 2 - 2)) * 2;
+    const res = [6];
+    for (let pos = ver * 4 + 10; res.length < n; pos -= step) res.splice(1, 0, pos);
+    return res;
+  };
+
+  // Reed-Solomon sur GF(256), polynôme 0x11D
+  const gfMul = (x, y) => {
+    let z = 0;
+    for (let i = 7; i >= 0; i--){
+      z = (z << 1) ^ ((z >>> 7) * 0x11D);
+      z ^= ((y >>> i) & 1) * x;
+    }
+    return z;
+  };
+  const rsDivisor = (degree) => {
+    const result = new Array(degree).fill(0);
+    result[degree - 1] = 1;
+    let root = 1;
+    for (let i = 0; i < degree; i++){
+      for (let j = 0; j < result.length; j++){
+        result[j] = gfMul(result[j], root);
+        if (j + 1 < result.length) result[j] ^= result[j + 1];
+      }
+      root = gfMul(root, 2);
+    }
+    return result;
+  };
+  const rsRemainder = (data, divisor) => {
+    const result = divisor.map(() => 0);
+    data.forEach(b => {
+      const factor = b ^ result.shift();
+      result.push(0);
+      divisor.forEach((coef, i) => { result[i] ^= gfMul(coef, factor); });
+    });
+    return result;
+  };
+
+  // Plus petite version qui contient n octets (niveau M d'abord, L si M ne suffit pas)
+  const choose = (n) => {
+    for (const ecc of ['M', 'L']){
+      for (let ver = 1; ver <= 40; ver++){
+        if (4 + (ver < 10 ? 8 : 16) + n * 8 <= dataCodewords(ver, ecc) * 8){
+          if (ecc === 'M' && ver > 30) break;
+          return { ver, ecc };
+        }
+      }
+    }
+    return null;
+  };
+
+  const MASKS = [
+    (x, y) => (x + y) % 2 === 0,
+    (x, y) => y % 2 === 0,
+    (x, y) => x % 3 === 0,
+    (x, y) => (x + y) % 3 === 0,
+    (x, y) => (Math.floor(x / 3) + Math.floor(y / 2)) % 2 === 0,
+    (x, y) => x * y % 2 + x * y % 3 === 0,
+    (x, y) => (x * y % 2 + x * y % 3) % 2 === 0,
+    (x, y) => ((x + y) % 2 + x * y % 3) % 2 === 0,
+  ];
+
+  // Score de pénalité normalisé (4 règles) : plus il est bas, plus le code se lit facilement
+  const penalty = (m, size) => {
+    let score = 0;
+    const lines = [];
+    for (let i = 0; i < size; i++){
+      lines.push(m[i]);
+      lines.push(m.map(row => row[i]));
+    }
+    lines.forEach(line => {
+      let run = 1;
+      for (let i = 1; i <= size; i++){
+        if (i < size && line[i] === line[i - 1]) run++;
+        else { if (run >= 5) score += 3 + (run - 5); run = 1; }
+      }
+      const s = line.map(v => v ? '1' : '0').join('');
+      for (let i = 0; i + 11 <= size; i++){
+        const w = s.substr(i, 11);
+        if (w === '10111010000' || w === '00001011101') score += 40;
+      }
+    });
+    let dark = 0;
+    for (let y = 0; y < size; y++){
+      for (let x = 0; x < size; x++){
+        if (m[y][x]) dark++;
+        if (x + 1 < size && y + 1 < size && m[y][x] === m[y][x + 1] && m[y][x] === m[y + 1][x] && m[y][x] === m[y + 1][x + 1]) score += 3;
+      }
+    }
+    const total = size * size;
+    score += (Math.ceil(Math.abs(dark * 20 - total * 10) / total) - 1) * 10;
+    return score;
+  };
+
+  // bytes : Uint8Array (ou tableau d'octets). Renvoie { version, ecc, size, modules } ou null si c'est trop long.
+  function make(bytes){
+    const pick = choose(bytes.length);
+    if (!pick) return null;
+    const { ver, ecc } = pick;
+    const size = ver * 4 + 17;
+
+    // 1. données : mode octets, longueur, octets, terminateur, remplissage
+    const bits = [];
+    const put = (val, len) => { for (let i = len - 1; i >= 0; i--) bits.push((val >>> i) & 1); };
+    put(4, 4);
+    put(bytes.length, ver < 10 ? 8 : 16);
+    for (let i = 0; i < bytes.length; i++) put(bytes[i], 8);
+    const capacity = dataCodewords(ver, ecc) * 8;
+    put(0, Math.min(4, capacity - bits.length));
+    while (bits.length % 8) bits.push(0);
+    for (let pad = 0xEC; bits.length < capacity; pad ^= 0xEC ^ 0x11) put(pad, 8);
+    const data = [];
+    for (let i = 0; i < bits.length; i += 8) data.push(parseInt(bits.slice(i, i + 8).join(''), 2));
+
+    // 2. blocs, correction d'erreur, entrelacement
+    const nBlocks = NUM_BLOCKS[ecc][ver], eccLen = ECC_PER_BLOCK[ecc][ver];
+    const raw = Math.floor(rawModules(ver) / 8);
+    const nShort = nBlocks - raw % nBlocks, shortLen = Math.floor(raw / nBlocks);
+    const divisor = rsDivisor(eccLen);
+    const blocks = [];
+    for (let i = 0, k = 0; i < nBlocks; i++){
+      const dat = data.slice(k, k + shortLen - eccLen + (i < nShort ? 0 : 1));
+      k += dat.length;
+      const e = rsRemainder(dat, divisor);
+      if (i < nShort) dat.push(0);
+      blocks.push(dat.concat(e));
+    }
+    const all = [];
+    for (let i = 0; i < blocks[0].length; i++){
+      blocks.forEach((blk, j) => { if (i !== shortLen - eccLen || j >= nShort) all.push(blk[i]); });
+    }
+
+    // 3. motifs fixes
+    const mod = Array.from({ length: size }, () => new Array(size).fill(false));
+    const fixed = Array.from({ length: size }, () => new Array(size).fill(false));
+    const setF = (x, y, dark) => { mod[y][x] = dark; fixed[y][x] = true; };
+    for (let i = 0; i < size; i++){ setF(6, i, i % 2 === 0); setF(i, 6, i % 2 === 0); }
+    const finder = (cx, cy) => {
+      for (let dy = -4; dy <= 4; dy++) for (let dx = -4; dx <= 4; dx++){
+        const x = cx + dx, y = cy + dy, dist = Math.max(Math.abs(dx), Math.abs(dy));
+        if (x >= 0 && x < size && y >= 0 && y < size) setF(x, y, dist !== 2 && dist !== 4);
+      }
+    };
+    finder(3, 3); finder(size - 4, 3); finder(3, size - 4);
+    const ap = alignPositions(ver), na = ap.length;
+    for (let i = 0; i < na; i++) for (let j = 0; j < na; j++){
+      if ((i === 0 && j === 0) || (i === 0 && j === na - 1) || (i === na - 1 && j === 0)) continue;
+      for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) setF(ap[i] + dx, ap[j] + dy, Math.max(Math.abs(dx), Math.abs(dy)) !== 1);
+    }
+    const bit = (v, i) => ((v >>> i) & 1) !== 0;
+    const drawFormat = (mask) => {
+      const d = (FORMAT_BITS[ecc] << 3) | mask;
+      let rem = d;
+      for (let i = 0; i < 10; i++) rem = (rem << 1) ^ ((rem >>> 9) * 0x537);
+      const f = ((d << 10) | rem) ^ 0x5412;
+      for (let i = 0; i <= 5; i++) setF(8, i, bit(f, i));
+      setF(8, 7, bit(f, 6)); setF(8, 8, bit(f, 7)); setF(7, 8, bit(f, 8));
+      for (let i = 9; i < 15; i++) setF(14 - i, 8, bit(f, i));
+      for (let i = 0; i < 8; i++) setF(size - 1 - i, 8, bit(f, i));
+      for (let i = 8; i < 15; i++) setF(8, size - 15 + i, bit(f, i));
+      setF(8, size - 8, true);
+    };
+    drawFormat(0);
+    if (ver >= 7){
+      let rem = ver;
+      for (let i = 0; i < 12; i++) rem = (rem << 1) ^ ((rem >>> 11) * 0x1F25);
+      const v = (ver << 12) | rem;
+      for (let i = 0; i < 18; i++){
+        const a = size - 11 + i % 3, b = Math.floor(i / 3);
+        setF(a, b, bit(v, i)); setF(b, a, bit(v, i));
+      }
+    }
+
+    // 4. placement des données en zigzag
+    let n = 0;
+    for (let right = size - 1; right >= 1; right -= 2){
+      if (right === 6) right = 5;
+      for (let vert = 0; vert < size; vert++){
+        for (let j = 0; j < 2; j++){
+          const x = right - j;
+          const y = ((right + 1) & 2) === 0 ? size - 1 - vert : vert;
+          if (!fixed[y][x] && n < all.length * 8){ mod[y][x] = bit(all[n >>> 3], 7 - (n & 7)); n++; }
+        }
+      }
+    }
+
+    // 5. masque : on garde le moins pénalisé
+    const applyMask = (k) => {
+      for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) if (!fixed[y][x] && MASKS[k](x, y)) mod[y][x] = !mod[y][x];
+    };
+    let best = 0, bestScore = Infinity;
+    for (let k = 0; k < 8; k++){
+      applyMask(k);
+      drawFormat(k);
+      const score = penalty(mod, size);
+      if (score < bestScore){ best = k; bestScore = score; }
+      applyMask(k);
+    }
+    applyMask(best);
+    drawFormat(best);
+    return { version: ver, ecc, size, mask: best, modules: mod };
+  }
+
+  // Dessin vectoriel : un seul tracé, fond blanc et marge de 4 modules (obligatoire pour que les lecteurs trouvent le code)
+  function toSVG(qr, label){
+    const border = 4, n = qr.size + 2 * border;
+    let d = '';
+    for (let y = 0; y < qr.size; y++){
+      let x = 0;
+      while (x < qr.size){
+        if (!qr.modules[y][x]){ x++; continue; }
+        let x2 = x;
+        while (x2 < qr.size && qr.modules[y][x2]) x2++;
+        d += 'M' + (x + border) + ',' + (y + border) + 'h' + (x2 - x) + 'v1h-' + (x2 - x) + 'z';
+        x = x2;
+      }
+    }
+    return '<svg class="qr-svg" width="' + n + '" height="' + n + '" viewBox="0 0 ' + n + ' ' + n + '" role="img" aria-label="' + String(label || 'QR code').replace(/[&<>"']/g, '') +
+      '" shape-rendering="crispEdges" xmlns="http://www.w3.org/2000/svg"><rect width="' + n + '" height="' + n + '" fill="#fff"/><path d="' + d + '" fill="#000"/></svg>';
+  }
+
+  return { make, toSVG };
+})();
+/* ---------------------------------------------------------------------- partage d'une fiche : format du lien */
+
+const SHARE_TAG = 'ma1';              // « MusicApp, format 1 » : ma1z = JSON compressé, ma1j = JSON brut
+const SHARE_MAX_JSON = 400000;        // garde-fou : une fiche partagée ne dépasse jamais 400 Ko une fois décompressée
+
+function utf8Bytes(str){
+  if (typeof TextEncoder === 'function') return new TextEncoder().encode(str);
+  const bin = unescape(encodeURIComponent(str));
+  const out = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+  return out;
+}
+function utf8String(bytes){
+  if (typeof TextDecoder === 'function') return new TextDecoder('utf-8', { fatal: true }).decode(bytes);
+  let bin = '';
+  for (let i = 0; i < bytes.length; i += 0x4000) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x4000));
+  return decodeURIComponent(escape(bin));
+}
+function b64urlEncode(bytes){
+  let bin = '';
+  for (let i = 0; i < bytes.length; i += 0x4000) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x4000));
+  return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+function b64urlDecode(text){
+  const s = text.replace(/-/g, '+').replace(/_/g, '/');
+  const bin = atob(s + '='.repeat((4 - s.length % 4) % 4));
+  const out = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+  return out;
+}
+
+// Vrai seulement si le navigateur sait vraiment fabriquer les deux flux « deflate-raw » (certains anciens navigateurs ont l'API sans ce format)
+const canDeflate = () => {
+  try {
+    return typeof CompressionStream === 'function' && typeof DecompressionStream === 'function' &&
+      !!new CompressionStream('deflate-raw') && !!new DecompressionStream('deflate-raw');
+  } catch (e) { return false; }
+};
+async function pipeBytes(bytes, stream, limit){
+  const writer = stream.writable.getWriter();
+  const writing = writer.write(bytes).then(() => writer.close()).catch(() => {});
+  const reader = stream.readable.getReader();
+  const chunks = [];
+  let total = 0;
+  for (;;){
+    const r = await reader.read();
+    if (r.done) break;
+    total += r.value.length;
+    if (limit && total > limit){ try { await reader.cancel(); } catch (e) { /* déjà fermé */ } throw new Error('trop volumineux'); }
+    chunks.push(r.value);
+  }
+  await writing;
+  const out = new Uint8Array(total);
+  let pos = 0;
+  chunks.forEach(c => { out.set(c, pos); pos += c.length; });
+  return out;
+}
+
+// Fiche -> texte court : titre, artiste, style, chanteurs, instruments, tonalité, tempo, mesure, paroles et accords.
+// (La transposition personnelle n'est pas partagée : chacun règle son capo.)
+async function encodeSharedSong(song){
+  const o = {
+    v: 1, t: song.title, a: song.artist, s: song.style, g: song.singers, i: song.instruments, k: song.originalKey,
+    b: song.bpm, m: song.timeSig === DEFAULT_TIME_SIGNATURE ? '' : song.timeSig, c: song.content,
+  };
+  const json = JSON.stringify(o, (key, v) => (v === '' || v === null || v === undefined || v === 0 || (Array.isArray(v) && !v.length)) ? undefined : v);
+  const raw = utf8Bytes(json);
+  if (canDeflate()){
+    try {
+      const z = await pipeBytes(raw, new CompressionStream('deflate-raw'));
+      if (z.length < raw.length) return { token: SHARE_TAG + 'z.' + b64urlEncode(z), rawSize: raw.length, packedSize: z.length };
+    } catch (e) { /* repli : sans compression */ }
+  }
+  return { token: SHARE_TAG + 'j.' + b64urlEncode(raw), rawSize: raw.length, packedSize: raw.length };
+}
+
+// Ce qui arrive par un lien est une donnée extérieure : on ne garde que des champs connus, bornés, sans caractères de commande.
+function sanitizeSharedSong(o){
+  if (!o || typeof o !== 'object' || o.v !== 1 || typeof o.c !== 'string') return null;
+  const clip = (v, n) => typeof v === 'string' ? v.replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, '').slice(0, n) : '';
+  return {
+    title: clip(o.t, 200).trim() || 'Chanson partagée',
+    artist: clip(o.a, 200).trim(),
+    style: clip(o.s, 100).trim(),
+    singers: clip(o.g, 200).trim(),
+    instruments: Array.isArray(o.i) ? Array.from(new Set(o.i.filter(id => typeof id === 'string' && instrumentById(id)))) : [],
+    originalKey: clip(o.k, 8).trim(),
+    bpm: normalizeBpm(o.b),
+    timeSig: normalizeTimeSignature(o.m),
+    content: clip(o.c, 100000),
+  };
+}
+
+function findShareToken(text){
+  const m = /ma1([zj])\.([A-Za-z0-9_-]{4,})/.exec(String(text || ''));
+  return m ? { kind: m[1], data: m[2] } : null;
+}
+
+// Renvoie { song } ou { error: 'old' | 'corrupt' }
+async function decodeSharedToken(tok){
+  try {
+    let bytes = b64urlDecode(tok.data);
+    if (tok.kind === 'z'){
+      if (!canDeflate()) return { error: 'old' };
+      bytes = await pipeBytes(bytes, new DecompressionStream('deflate-raw'), SHARE_MAX_JSON);
+    } else if (bytes.length > SHARE_MAX_JSON){
+      return { error: 'corrupt' };
+    }
+    const song = sanitizeSharedSong(JSON.parse(utf8String(bytes)));
+    return song ? { song } : { error: 'corrupt' };
+  } catch (e){
+    return { error: 'corrupt' };
+  }
+}
+
+// Adresse sur laquelle l'autre appareil ouvrira le lien : celle de la page (si elle est servie en http/https), sinon celle saisie dans les réglages.
+function shareBaseUrl(){
+  const custom = String(Store.state.settings.shareBaseUrl || '').trim();
+  if (custom) return custom.split('#')[0];
+  return (location.protocol === 'http:' || location.protocol === 'https:') ? location.href.split('#')[0] : '';
+}
+const isLocalAddress = (url) => /^https?:\/\/(localhost|127\.|\[::1\]|0\.0\.0\.0)/i.test(url);
+
+/* ---------------------------------------------------------------------- fenêtre « Partager » */
+
+async function openShareModal(songId){
+  const song = Store.getSong(songId);
+  if (!song) return;
+  if (UI.view === 'prompter') pauseAutoscroll();
+  hideAllModals();                                       // referme aussi une fenêtre « Partager » déjà ouverte (et fait avancer UI.share.seq)
+  const seq = ++UI.share.seq;
+  UI.share.songId = songId;
+  UI.share.enc = null;
+  document.getElementById('shareSubtitle').textContent = '« ' + song.title + ' »' + (song.artist ? ' · ' + song.artist : '');
+  document.getElementById('shareQr').innerHTML = '<p class="hint">Préparation du code…</p>';
+  document.getElementById('shareInfo').textContent = '';
+  document.getElementById('shareLinkInput').value = '';
+  document.getElementById('modalShare').hidden = false;
+  const enc = await encodeSharedSong(song);
+  if (seq !== UI.share.seq) return;                      // fermée ou rouverte sur une autre chanson entre-temps
+  UI.share.enc = enc;
+  renderShareModal();
+}
+
+function shareLinkText(){
+  const enc = UI.share.enc;
+  if (!enc) return '';
+  const base = shareBaseUrl();
+  return base ? base + '#' + enc.token : enc.token;
+}
+
+function renderShareModal(){
+  const enc = UI.share.enc;
+  if (!enc) return;
+  const base = shareBaseUrl();
+  const link = shareLinkText();
+  const local = !!base && isLocalAddress(base);
+  const qrBox = document.getElementById('shareQr');
+  const qr = QR.make(utf8Bytes(link));
+  if (qr){
+    qrBox.innerHTML = QR.toSVG(qr, 'QR code de la fiche « ' + (Store.getSong(UI.share.songId) || { title: '' }).title + ' »');
+    UI.share.qr = { version: qr.version, ecc: qr.ecc };
+  } else {
+    qrBox.innerHTML = '<p class="share-toolong">Cette fiche est trop longue pour tenir dans un seul QR code. Utilisez le lien ci-dessous (copier, ou « Partager… »).</p>';
+    UI.share.qr = null;
+  }
+  if (qr) fitShareQr();
+  const size = enc.rawSize.toLocaleString('fr-FR') + ' octets' + (enc.packedSize < enc.rawSize ? ', compressés en ' + enc.packedSize.toLocaleString('fr-FR') : '');
+  document.getElementById('shareInfo').textContent = 'Fiche : ' + size + (qr ? ' · QR code version ' + qr.version + ', niveau ' + qr.ecc : '') + '.';
+  let how;
+  if (!base) how = 'Aucune adresse publiée pour MusicApp : ce code se lit avec le scanner de MusicApp (Réglages → Scanner un QR code). L\'appareil photo, lui, n\'afficherait que du texte. Pour qu\'il ouvre directement l\'appli, indiquez ci-dessous son adresse.';
+  else if (local) how = 'Attention : cette adresse (localhost) n\'est lisible que sur cet appareil. Indiquez ci-dessous l\'adresse publique de MusicApp pour partager avec les autres musiciens.';
+  else how = 'Sur l\'autre tablette, ouvrez l\'appareil photo et visez ce code : MusicApp s\'ouvre et propose d\'importer la fiche. Vous pouvez aussi envoyer le lien.';
+  document.getElementById('shareHowto').textContent = how;
+  document.getElementById('shareLinkLabel').textContent = base ? 'Lien direct' : 'Code de partage';
+  document.getElementById('shareLinkInput').value = link;
+  document.getElementById('shareBaseInput').value = Store.state.settings.shareBaseUrl || '';
+  document.getElementById('shareBaseBlock').open = !base || local;
+  document.getElementById('btnShareNative').hidden = typeof navigator.share !== 'function';
+}
+
+// Le code est dessiné avec un nombre entier de pixels d'écran par module : des modules tous identiques se lisent bien mieux
+// (appareil photo, décodeur) qu'un dessin à l'échelle quelconque, surtout pour les codes denses.
+function fitShareQr(){
+  const svg = document.querySelector('#shareQr svg.qr-svg');
+  if (!svg) return;
+  const modules = Number(svg.getAttribute('width'));                      // modules, zone de silence comprise
+  const ratio = window.devicePixelRatio || 1;
+  svg.style.width = svg.style.height = '';                                // d'abord la taille laissée au cadre
+  const px = Math.floor(svg.getBoundingClientRect().width * ratio / modules);
+  if (px >= 1) svg.style.width = svg.style.height = (px * modules / ratio) + 'px';
+}
+window.addEventListener('resize', debounce(() => { if (!document.getElementById('modalShare').hidden) fitShareQr(); }, 120));
+
+async function copyShareLink(){
+  const input = document.getElementById('shareLinkInput');
+  const text = input.value;
+  if (!text) return;
+  let done = false;
+  try {
+    if (navigator.clipboard && navigator.clipboard.writeText){ await navigator.clipboard.writeText(text); done = true; }
+  } catch (e) { done = false; }
+  if (!done){
+    try { input.focus(); input.select(); input.setSelectionRange(0, text.length); done = !!document.execCommand('copy'); } catch (e) { done = false; }
+  }
+  toast(done ? 'Lien copié.' : 'Copie automatique impossible : le lien est sélectionné, copiez-le à la main.', !done);
+}
+
+async function nativeShare(){
+  const song = Store.getSong(UI.share.songId);
+  const link = shareLinkText();
+  if (!song || !link || typeof navigator.share !== 'function') return;
+  try {
+    const data = shareBaseUrl() ? { title: song.title, text: 'Fiche MusicApp : ' + song.title, url: link } : { title: song.title, text: link };
+    await navigator.share(data);
+  } catch (e) { /* partage annulé par l'utilisateur */ }
+}
+
+function setShareBase(value){
+  const v = String(value || '').trim().split('#')[0];                 // un éventuel « #… » collé avec l'adresse n'a rien à faire dans la base
+  if (v && !/^https?:\/\/[^\s]+$/i.test(v)){
+    toast('L\'adresse doit commencer par http:// ou https://', true);
+    return false;
+  }
+  Store.state.settings.shareBaseUrl = v;
+  Store.save();
+  return true;
+}
+
+/* ---------------------------------------------------------------------- import d'une fiche reçue */
+
+const SHARE_ERRORS = {
+  old: 'Ce navigateur est trop ancien pour lire ce code : mettez-le à jour ou demandez la fiche en fichier.',
+  corrupt: 'Ce lien est incomplet ou abîmé : demandez à l\'autre musicien de le renvoyer.',
+  none: 'Ce texte ne contient pas de fiche MusicApp.',
+};
+const sameText = (a, b) => String(a || '').trim().toLocaleLowerCase('fr') === String(b || '').trim().toLocaleLowerCase('fr');
+
+async function importSharedText(text){
+  const tok = findShareToken(text);
+  if (!tok){ toast(SHARE_ERRORS.none, true); return false; }
+  const res = await decodeSharedToken(tok);
+  if (res.error){ toast(SHARE_ERRORS[res.error], true); return false; }
+  confirmSharedImport(res.song);
+  return true;
+}
+
+function confirmSharedImport(song){
+  const twins = Store.state.songs.filter(s => sameText(s.title, song.title) && sameText(s.artist, song.artist));
+  const same = twins.find(s => s.content === song.content);
+  if (same){
+    toast('« ' + song.title + ' » est déjà dans votre bibliothèque.', false, { label: 'Ouvrir', onClick: () => openPrompter(same.id, { type: 'library' }) });
+    return;
+  }
+  const existing = twins[0] || null;
+  hideAllModals();                                       // avant de mémoriser la fiche : fermer l'ancienne fenêtre d'import efface UI.share.incoming
+  UI.share.incoming = song;
+  UI.share.existingId = existing ? existing.id : null;
+  const lines = song.content.split('\n').filter(l => l.trim() !== '');
+  const meta = [song.style, song.instruments.map(id => instrumentById(id).short).join(', '), song.bpm ? song.bpm + ' BPM · ' + song.timeSig : '', lines.length + ' lignes'].filter(Boolean).join(' · ');
+  const box = document.getElementById('shareImportPreview');
+  box.innerHTML = '<b class="sp-title"></b><span class="sp-artist"></span><span class="sp-meta"></span><pre class="sp-excerpt"></pre>';
+  box.querySelector('.sp-title').textContent = song.title;
+  box.querySelector('.sp-artist').textContent = song.artist;
+  box.querySelector('.sp-meta').textContent = meta;
+  box.querySelector('.sp-excerpt').textContent = lines.slice(0, 5).join('\n') + (lines.length > 5 ? '\n…' : '');
+  document.getElementById('shareImportNote').textContent = existing
+    ? 'Vous avez déjà « ' + existing.title + ' » avec un contenu différent. Remplacer garde son numéro dans vos playlists ; Importer en fait une copie.'
+    : 'Elle sera ajoutée à votre bibliothèque. Rien n\'est modifié avant votre accord.';
+  document.getElementById('btnShareImportReplace').hidden = !existing;
+  document.getElementById('btnShareImportAdd').textContent = existing ? 'Importer une copie' : 'Importer';
+  document.getElementById('modalShareImport').hidden = false;
+}
+
+function finishSharedImport(song, replaced){
+  document.getElementById('modalShareImport').hidden = true;
+  UI.share.incoming = null;
+  renderLibrary();
+  if (UI.view !== 'library') showView('library');
+  toast('« ' + song.title + ' » ' + (replaced ? 'mise à jour.' : 'importée.'), false, { label: 'Ouvrir', onClick: () => openPrompter(song.id, { type: 'library' }) });
+}
+
+document.getElementById('btnShareImportAdd').addEventListener('click', () => {
+  const incoming = UI.share.incoming;
+  if (!incoming) return;
+  finishSharedImport(Store.createSong(incoming), false);
+});
+document.getElementById('btnShareImportReplace').addEventListener('click', () => {
+  const incoming = UI.share.incoming;
+  const target = incoming && Store.getSong(UI.share.existingId);
+  if (!target) return;
+  const keep = { title: target.title, artist: target.artist };
+  const song = Store.updateSong(target.id, Object.assign({}, incoming, keep));
+  finishSharedImport(song, true);
+});
+document.getElementById('btnShareImportCancel').addEventListener('click', () => {
+  UI.share.incoming = null;
+  closeModalEl(document.getElementById('modalShareImport'));
+});
+
+// Lien ouvert dans l'appli (appareil photo, message…) : #ma1z.… dans l'adresse
+function handleShareHash(){
+  const hash = location.hash || '';
+  if (!findShareToken(hash)) return;
+  try { history.replaceState(null, '', location.pathname + location.search); } catch (e) { /* adresse non modifiable : sans importance */ }
+  importSharedText(hash);
+}
+window.addEventListener('hashchange', handleShareHash);
+
+/* ---------------------------------------------------------------------- scanner intégré (navigateurs qui savent lire les QR codes) */
+
+function stopScanner(){
+  const s = UI.share.scan;
+  UI.share.scan = null;
+  document.getElementById('modalScan').hidden = true;
+  if (!s) return;
+  clearInterval(s.timer);
+  if (s.stream) s.stream.getTracks().forEach(t => t.stop());
+  const video = document.getElementById('scanVideo');
+  try { video.pause(); } catch (e) { /* rien à arrêter */ }
+  video.srcObject = null;
+}
+
+async function openScanner(){
+  const canScan = typeof window.BarcodeDetector === 'function' && navigator.mediaDevices && typeof navigator.mediaDevices.getUserMedia === 'function';
+  if (!canScan){
+    toast('Ce navigateur ne sait pas lire les QR codes ici. Visez le code avec l\'appareil photo de la tablette, ou utilisez « Coller un lien ».', true);
+    return;
+  }
+  hideAllModals();
+  const status = document.getElementById('scanStatus');
+  status.textContent = 'Ouverture de la caméra…';
+  document.getElementById('modalScan').hidden = false;
+  let stream;
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
+  } catch (e){
+    document.getElementById('modalScan').hidden = true;
+    toast('Caméra inaccessible : autorisez-la dans le navigateur, ou utilisez « Coller un lien ».', true);
+    return;
+  }
+  if (document.getElementById('modalScan').hidden){ stream.getTracks().forEach(t => t.stop()); return; }   // fermé pendant l'autorisation
+  const scan = { stream, busy: false, timer: null };
+  UI.share.scan = scan;                                    // enregistré tout de suite : fermer la fenêtre éteint la caméra, même pendant le démarrage
+  const video = document.getElementById('scanVideo');
+  video.srcObject = stream;
+  try { await video.play(); } catch (e) { /* lecture automatique refusée : le flux reste branché */ }
+  if (UI.share.scan !== scan) return;                      // fermé pendant le démarrage de la caméra
+  status.textContent = 'Cadrez le QR code d\'une fiche partagée.';
+  let detector;
+  try { detector = new window.BarcodeDetector({ formats: ['qr_code'] }); } catch (e) { stopScanner(); toast('Lecture de QR code indisponible dans ce navigateur.', true); return; }
+  scan.timer = setInterval(async () => {
+    if (scan.busy || UI.share.scan !== scan) return;
+    scan.busy = true;
+    try {
+      const codes = await detector.detect(video);
+      const hit = codes.find(c => findShareToken(c.rawValue));
+      if (hit && UI.share.scan === scan){ stopScanner(); importSharedText(hit.rawValue); }
+      else if (codes.length && UI.share.scan === scan) status.textContent = 'Ce QR code n\'est pas une fiche MusicApp.';
+    } catch (e) { /* image pas encore prête : on réessaie */ }
+    scan.busy = false;
+  }, 250);
+}
+
+/* ---------------------------------------------------------------------- branchements */
+
+document.addEventListener('click', (e) => {
+  const btn = e.target.closest ? e.target.closest('[data-share-song]') : null;
+  if (btn) openShareModal(btn.dataset.shareSong);
+});
+document.getElementById('btnPrompterShare').addEventListener('click', () => { if (UI.prompter.songId) openShareModal(UI.prompter.songId); });
+document.getElementById('btnCloseShare').addEventListener('click', () => closeModalEl(document.getElementById('modalShare')));
+document.getElementById('btnShareCopy').addEventListener('click', copyShareLink);
+document.getElementById('btnShareNative').addEventListener('click', nativeShare);
+document.getElementById('shareLinkInput').addEventListener('focus', (e) => e.target.select());
+document.getElementById('shareBaseInput').addEventListener('change', (e) => {
+  if (setShareBase(e.target.value)) renderShareModal(); else e.target.value = Store.state.settings.shareBaseUrl || '';
+});
+document.getElementById('optShareBase').addEventListener('change', (e) => {
+  if (!setShareBase(e.target.value)) e.target.value = Store.state.settings.shareBaseUrl || '';
+});
+document.addEventListener('paste', (e) => {
+  const t = e.target;
+  if (t && t.closest && t.closest('input, textarea, select, [contenteditable]')) return;      // un collage dans un champ reste un collage
+  const text = e.clipboardData ? e.clipboardData.getData('text') : '';
+  if (text && findShareToken(text)){ e.preventDefault(); importSharedText(text); }
+});
+document.getElementById('btnScanQr').addEventListener('click', openScanner);
+document.getElementById('btnScanClose').addEventListener('click', stopScanner);
+document.getElementById('btnPasteLink').addEventListener('click', () => {
+  showPrompt('Importer une fiche partagée', 'Collez ici le lien (ou le code de partage) reçu :', '', (value) => { importSharedText(value); });
 });
 
 /* =========================================================================
@@ -3904,12 +6403,15 @@ window.addEventListener('resize', debounce(updateSearchPlaceholder, 150));
 function init(){
   Store.load();
   fillStaticIcons();
+  document.getElementById('btnPrompterFullscreen').hidden = !fullscreenSupported();
   updateSearchPlaceholder();
   renderColorToolbar();
   populateKeyOptions();
+  populateTimeSignatureOptions();
   renderLibrary();
   showView('library');
   checkExportReminder();
+  handleShareHash();                        // lien de partage ouvert dans l'appli (appareil photo, message…)
 }
 
 document.addEventListener('DOMContentLoaded', init);
