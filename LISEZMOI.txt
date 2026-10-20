@@ -1,0 +1,120 @@
+MusicApp 3.0 — prompteur de scène pour musiciens
+=================================================
+
+Paroles et accords qui défilent, playlists, transposition, métronome, partage de fiches et de sets.
+Tout reste sur l'appareil : aucun compte, aucun service en ligne. Interface en français.
+
+
+CE QUE CONTIENT LE DOSSIER
+--------------------------
+  index.html                   l'application (un seul fichier)
+  sw.js                        copie l'appli sur l'appareil pour qu'elle marche SANS RÉSEAU
+  manifest.webmanifest         fiche d'installation (nom, plein écran)
+  icon-192.png, icon-512.png,
+  icon-maskable-512.png,
+  apple-touch-icon.png         les icônes
+  LISEZMOI.txt                 ce fichier
+  test-setlist.js              tests automatiques (facultatif : voir le point 6)
+
+
+1. UTILISER L'APPLI SANS RÉSEAU (à faire une fois, chez vous, avec Internet)
+----------------------------------------------------------------------------
+Le mode hors ligne et l'installation exigent que l'appli soit ouverte depuis une adresse https.
+(Ouvrir index.html directement depuis un fichier fonctionne, mais sans mode hors ligne ni icône.)
+
+Hébergement gratuit avec GitHub Pages :
+  a. Créez un dépôt GitHub (par exemple « musicapp »).
+  b. Déposez-y à la racine les 7 fichiers : index.html, sw.js, manifest.webmanifest et les 4 icônes
+     (Add file → Upload files). Ils doivent être dans le MÊME dossier.
+  c. Settings → Pages → Source « Deploy from a branch », branche main, dossier « / (root) » → Save.
+     Après quelques minutes, l'adresse s'affiche : https://votre-compte.github.io/musicapp/
+  d. Ouvrez cette adresse sur chaque tablette, téléphone ou ordinateur, avec Internet.
+  e. Réglages → « Hors ligne et installation » : la pastille doit être verte
+     (« Prête pour les salles sans réseau »).
+  f. Installez l'appli :
+       iPad / iPhone : Safari → Partager → « Sur l'écran d'accueil »
+       Android, Chrome, Edge : bouton « Installer MusicApp » dans les Réglages
+       ordinateur (Chrome, Edge) : icône d'installation dans la barre d'adresse
+  g. Vérifiez : mode avion, puis relancez l'appli. Elle doit s'ouvrir avec toutes vos chansons.
+
+À savoir :
+  - L'appli installée sur l'écran d'accueil a son PROPRE espace de données, séparé de celui du navigateur.
+    Installez d'abord, puis saisissez ou importez vos chansons ; sinon, exportez depuis le navigateur
+    (Réglages → Exporter) et importez le fichier dans l'appli installée.
+  - Safari peut effacer les données d'un site resté plusieurs jours sans être ouvert : une appli installée
+    sur l'écran d'accueil n'est pas concernée. Exportez une sauvegarde de temps en temps.
+  - Essai sans GitHub : dans le dossier, lancez « python3 -m http.server 8000 » puis ouvrez
+    http://localhost:8000 (localhost est accepté comme une adresse https).
+
+Mises à jour : remplacez index.html (et sw.js s'il est fourni) dans le dépôt. À la prochaine ouverture avec
+réseau, l'appli propose « Recharger » ; rien ne se recharge tout seul pendant un morceau, et vos données
+ne sont jamais touchées. Si vous ajoutez un fichier à la liste de sw.js, changez le numéro de CACHE
+(ligne « const CACHE = PREFIX + '1' »).
+
+
+2. LES NOUVEAUTÉS DE LA VERSION 3
+---------------------------------
+  1. Hors ligne et installable (voir ci-dessus), avec une pastille d'état dans les Réglages et une
+     invitation à recharger quand une nouvelle version existe.
+  2. Métadonnées en lot : tonalité détectée d'après les accords, tempos saisis à la suite avec « Frapper »
+     (Outils de la bibliothèque, ou message « Compléter les fiches »). Sans tonalité ni tempo, la suggestion
+     de capo, le décompte et le pulseur ne servent à rien : c'est ce qui les rend utiles sur toute la bibliothèque.
+  3. Vraies setlists : durée estimée du set (pause entre titres, objectif, heure de début, heure de fin),
+     duplication d'une playlist, création d'une playlist depuis une sélection (dans l'ordre des coches),
+     détection des doublons avec fusion annulable.
+  4. Repères de section : « Repères auto » (Couplet, Refrain, Intro, Outro) dans l'éditeur ou pour toute la
+     bibliothèque (Outils → Repères de section), barre de parties au prompteur, saut direct à une partie
+     (toucher, Maj + ↑/↓, [ et ], touches 1 à 9) sans arrêter le défilement automatique.
+  5. Partage d'un set entier en fichier : icône de partage à côté du nom de la playlist (ou Outils → Partager
+     cette playlist) → « Envoyer… » (AirDrop, Messages, e-mail) ou « Télécharger le fichier ».
+     Réception : Outils → Recevoir une playlist, avec un aperçu (nouvelles chansons, déjà chez vous,
+     différentes) et un « Annuler » qui défait tout.
+  En plus : le prompteur d'un téléphone tenu à l'horizontale ne cache plus le texte sous les commandes
+  (en-tête et commandes plus compacts), et le panneau des playlists affiche le nom complet de la playlist ouverte.
+
+
+3. PARTAGER UN SET (en deux minutes)
+------------------------------------
+  Chez vous : ouvrez la playlist → icône de partage → « Envoyer… » (ou « Télécharger le fichier »).
+  Le fichier s'appelle « <nom de la playlist>.musicapp.json ».
+  Chez l'autre musicien : enregistrer le fichier sur l'appareil (iPhone, iPad : « Enregistrer dans Fichiers »),
+  puis MusicApp → Outils → Recevoir une playlist → choisir le fichier → vérifier l'aperçu → « Ajouter la playlist ».
+  Quand une chanson existe déjà avec un texte différent : « Garder la mienne » (par défaut), « Mettre à jour »
+  ou « Garder les deux ». Votre transposition et vos vitesses de défilement ne partent pas.
+  Pour une seule chanson, le QR code ou le lien de la fiche suffit.
+
+
+4. LIMITES CONNUES
+------------------
+  - La durée d'un set est une ESTIMATION tant que les durées ne sont pas saisies titre par titre
+    (un « ≈ » le signale ; l'estimation se cale sur vos vraies durées dès que trois chansons en ont une).
+  - La tonalité détectée est une proposition : une tonalité et sa relative (Do et La mineur) se confondent
+    facilement. Vérifiez avant de valider.
+  - Les repères automatiques ne devinent ni pont ni pré-refrain, et ne proposent rien quand aucun refrain
+    ne se répète (blocs de paroles séparés par des lignes vides). Ils s'ajoutent alors à la main : {c: Pont}.
+  - Le menu de partage de l'appareil (AirDrop, Messages…) dépend du navigateur : si l'appareil ne sait pas
+    envoyer un fichier, le bouton « Envoyer… » n'apparaît pas et seul le téléchargement est proposé.
+  - Sur un téléphone à l'horizontale, l'éditeur de chansons et la bibliothèque restent à l'étroit
+    (le prompteur, lui, est adapté).
+
+
+5. RACCOURCIS (clavier ou pédale Bluetooth)
+-------------------------------------------
+  Espace            démarre / arrête le défilement
+  ← →               chanson précédente / suivante
+  ↑ ↓               défilement à la main
+  Maj + ↑ / ↓       partie précédente / suivante      (ou  [  et  ] )
+  1 à 9             saut direct à la partie n° 1 à 9
+  Page ↑ / Page ↓   défilement d'un écran (pédales tourne-pages)
+  F                 plein écran            Échap   retour à la bibliothèque
+
+
+6. TESTS AUTOMATIQUES (facultatif, pour qui développe)
+-----------------------------------------------------
+  Dans ce dossier :   npm install jsdom
+                      node test-setlist.js
+  Les 316 tests simulent le navigateur (jsdom) : bibliothèque, éditeur, prompteur, repères de section, partage,
+  import / export, Drive simulé, fichiers de l'installation hors ligne.
+  Ce que jsdom ne peut pas vérifier (mise en page réelle, service worker, menu de partage d'un iPhone) a été
+  contrôlé séparément dans un vrai Chromium ; le menu de partage d'iOS ou d'Android, lui, n'a pu être
+  essayé que simulé : testez l'envoi d'un set sur vos propres appareils avant de compter dessus.
