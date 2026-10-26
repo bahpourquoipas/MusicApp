@@ -1,8 +1,10 @@
-MusicApp 3.0 — prompteur de scène pour musiciens
+MusicApp 4.0 — prompteur de scène pour musiciens
 =================================================
 
-Paroles et accords qui défilent, playlists, transposition, métronome, partage de fiches et de sets.
-Tout reste sur l'appareil : aucun compte, aucun service en ligne. Interface en français.
+Paroles et accords qui défilent, playlists, transposition, métronome, partage de fiches et de sets,
+import EasyZic, liens Spotify / Apple Music.
+Tout reste sur l'appareil : aucun compte, aucun service en ligne (sauf si VOUS demandez la création d'une
+playlist Spotify, voir le point 3). Interface en français.
 
 
 CE QUE CONTIENT LE DOSSIER
@@ -14,7 +16,7 @@ CE QUE CONTIENT LE DOSSIER
   icon-maskable-512.png,
   apple-touch-icon.png         les icônes
   LISEZMOI.txt                 ce fichier
-  test-setlist.js              tests automatiques (facultatif : voir le point 6)
+(Les tests automatiques, test-setlist.js, sont fournis à part : voir le point 7.)
 
 
 1. UTILISER L'APPLI SANS RÉSEAU (à faire une fois, chez vous, avec Internet)
@@ -44,7 +46,9 @@ Hébergement gratuit avec GitHub Pages :
   - Safari peut effacer les données d'un site resté plusieurs jours sans être ouvert : une appli installée
     sur l'écran d'accueil n'est pas concernée. Exportez une sauvegarde de temps en temps.
   - Essai sans GitHub : dans le dossier, lancez « python3 -m http.server 8000 » puis ouvrez
-    http://localhost:8000 (localhost est accepté comme une adresse https).
+    http://localhost:8000 (localhost est accepté comme une adresse https pour le mode hors ligne).
+    Pour essayer la création d'une playlist Spotify en local, utilisez plutôt http://127.0.0.1:8000 :
+    Spotify refuse « localhost » comme adresse de redirection.
 
 Mises à jour : remplacez index.html (et sw.js s'il est fourni) dans le dépôt. À la prochaine ouverture avec
 réseau, l'appli propose « Recharger » ; rien ne se recharge tout seul pendant un morceau, et vos données
@@ -52,28 +56,62 @@ ne sont jamais touchées. Si vous ajoutez un fichier à la liste de sw.js, chang
 (ligne « const CACHE = PREFIX + '1' »).
 
 
-2. LES NOUVEAUTÉS DE LA VERSION 3
+2. LES NOUVEAUTÉS DE LA VERSION 4
 ---------------------------------
-  1. Hors ligne et installable (voir ci-dessus), avec une pastille d'état dans les Réglages et une
-     invitation à recharger quand une nouvelle version existe.
-  2. Métadonnées en lot : tonalité détectée d'après les accords, tempos saisis à la suite avec « Frapper »
-     (Outils de la bibliothèque, ou message « Compléter les fiches »). Sans tonalité ni tempo, la suggestion
-     de capo, le décompte et le pulseur ne servent à rien : c'est ce qui les rend utiles sur toute la bibliothèque.
-  3. Vraies setlists : durée estimée du set (pause entre titres, objectif, heure de début, heure de fin),
-     duplication d'une playlist, création d'une playlist depuis une sélection (dans l'ordre des coches),
-     détection des doublons avec fusion annulable.
-  4. Repères de section : « Repères auto » (Couplet, Refrain, Intro, Outro) dans l'éditeur ou pour toute la
-     bibliothèque (Outils → Repères de section), barre de parties au prompteur, saut direct à une partie
-     (toucher, Maj + ↑/↓, [ et ], touches 1 à 9) sans arrêter le défilement automatique.
-  5. Partage d'un set entier en fichier : icône de partage à côté du nom de la playlist (ou Outils → Partager
-     cette playlist) → « Envoyer… » (AirDrop, Messages, e-mail) ou « Télécharger le fichier ».
-     Réception : Outils → Recevoir une playlist, avec un aperçu (nouvelles chansons, déjà chez vous,
-     différentes) et un « Annuler » qui défait tout.
-  En plus : le prompteur d'un téléphone tenu à l'horizontale ne cache plus le texte sous les commandes
-  (en-tête et commandes plus compacts), et le panneau des playlists affiche le nom complet de la playlist ouverte.
+  1. Import avec sélection. Un export EasyZic (.ezp), une sauvegarde, une playlist partagée ou une fiche ChordPro
+     passent par un écran d'import : chaque chanson est « Nouvelle », « Déjà chez vous » ou « Différente ».
+     Vous décochez ce que vous ne voulez pas, vous choisissez pour chaque chanson différente (garder la
+     vôtre, mettre à jour, garder les deux), vous décidez de créer ou non la playlist. Rien n'est ajouté avant
+     votre accord et « Annuler » défait tout l'import. « Tout remplacer… » restaure une sauvegarde à l'identique.
+  2. Écouter un titre sur Spotify ou Apple Music. L'icône casque (liste, menu ⋯, éditeur) ouvre le titre : lien
+     exact si vous l'avez collé (Partager → Copier le lien dans Spotify / Apple Music), sinon une recherche
+     « titre + artiste ». Le lien est enregistré avec la chanson (copie, fusion de doublons, sauvegarde, fichier
+     de set, QR code et lien de partage).
+  3. Écouter toute la setlist. Dans une playlist : icône casque à côté de son nom, ou Outils → Écouter cette
+     playlist. Voir le point 3 ci-dessous.
+  En plus : une section d'aide intégrée (bouton « ? ») pour chacune de ces fonctions.
 
 
-3. PARTAGER UN SET (en deux minutes)
+3. UNE PLAYLIST SPOTIFY ET UNE PLAYLIST APPLE MUSIC POUR CHAQUE SETLIST
+------------------------------------------------------------------------
+Ce qui marche tout de suite, sans compte ni réglage (MusicApp ne contacte aucun service) :
+  - Chaque titre de la setlist s'ouvre dans Spotify / Apple Music, dans l'ordre du set.
+  - Spotify : « Copier N liens » met les adresses des titres dans le presse-papiers. Dans l'appli Spotify pour
+    ordinateur : ouvrir une playlist, cliquer dans la liste des titres, coller (Ctrl+V ou ⌘V).
+    Ce raccourci de Spotify marche le plus souvent mais n'est pas garanti par Spotify.
+  - Apple Music : « Copier la liste Artiste - Titre » ou « Télécharger en CSV », puis un service de transfert de
+    playlists (TuneMyMusic, Soundiiz…) crée la playlist dans Apple Music. Vérifiez ensuite chaque titre.
+    Apple ne permet pas à une appli de créer une playlist sans un compte développeur payant : c'est la
+    raison de ce détour, il n'existe pas de bouton « Créer sur Apple Music » honnête sans ce compte.
+  - Une fois la playlist créée, collez son lien dans la fenêtre : il reste attaché à la setlist (le casque de la
+    playlist devient ambre) et voyage avec le fichier de la playlist et la sauvegarde.
+
+Option avancée : créer la playlist directement dans votre compte Spotify.
+  Spotify n'autorise une appli à écrire dans un compte qu'avec une « appli développeur » à votre nom. Elle se
+  crée gratuitement, mais son propriétaire doit avoir un abonnement Spotify Premium actif.
+  a. MusicApp doit être ouverte depuis une adresse https (GitHub Pages) ou http://127.0.0.1 : jamais depuis un
+     fichier ni depuis « localhost ».
+  b. Dans la fenêtre « Créer la playlist sur Spotify », suivez les 4 étapes : developer.spotify.com/dashboard →
+     « Create app » → déclarer l'adresse de redirection que MusicApp affiche (bouton Copier) → cocher « Web API »
+     → copier le « Client ID » de l'appli et le coller dans MusicApp. Le Client ID n'est pas un secret.
+  c. « Se connecter à Spotify » : la connexion se fait sur la page de Spotify (aucun mot de passe ne passe par
+     MusicApp). Les jetons de connexion restent sur l'appareil : ni dans les sauvegardes, ni dans les partages,
+     ni sur Google Drive. « Se déconnecter » les efface.
+  d. MusicApp cherche chaque titre et affiche un écran de vérification : pour chaque titre, une pastille
+     (« Lien enregistré », « Trouvé », « À vérifier », « Introuvable »), la liste des versions possibles à choisir,
+     et une case à décocher. La playlist n'est créée qu'après votre accord, dans l'ordre du set. Vous pouvez
+     fermer la fenêtre pendant la création.
+  Si Spotify refuse (appli en « mode développement » limitée à quelques comptes déclarés, abonnement Premium
+  absent, erreur 403…), MusicApp l'explique et les deux chemins sans compte restent disponibles.
+
+  HONNÊTETÉ : cette création directe n'a pu être essayée que contre une SIMULATION de Spotify (échange de code
+  PKCE, renouvellement du jeton, recherche, création, ajout par paquets de 100, erreurs 401 / 403 / 429 / 5xx,
+  coupures réseau). Le vrai Spotify peut se comporter autrement sur un détail : faites un premier essai avec
+  une setlist de 3 titres avant de compter dessus. Idem pour Apple Music et les services de transfert :
+  aucun n'a été contacté pendant le développement.
+
+
+4. PARTAGER UN SET (en deux minutes)
 ------------------------------------
   Chez vous : ouvrez la playlist → icône de partage → « Envoyer… » (ou « Télécharger le fichier »).
   Le fichier s'appelle « <nom de la playlist>.musicapp.json ».
@@ -84,7 +122,7 @@ ne sont jamais touchées. Si vous ajoutez un fichier à la liste de sw.js, chang
   Pour une seule chanson, le QR code ou le lien de la fiche suffit.
 
 
-4. LIMITES CONNUES
+5. LIMITES CONNUES
 ------------------
   - La durée d'un set est une ESTIMATION tant que les durées ne sont pas saisies titre par titre
     (un « ≈ » le signale ; l'estimation se cale sur vos vraies durées dès que trois chansons en ont une).
@@ -94,11 +132,13 @@ ne sont jamais touchées. Si vous ajoutez un fichier à la liste de sw.js, chang
     ne se répète (blocs de paroles séparés par des lignes vides). Ils s'ajoutent alors à la main : {c: Pont}.
   - Le menu de partage de l'appareil (AirDrop, Messages…) dépend du navigateur : si l'appareil ne sait pas
     envoyer un fichier, le bouton « Envoyer… » n'apparaît pas et seul le téléchargement est proposé.
+  - Les liens Spotify / Apple Music ne sont jamais vérifiés par l'appli (elle ne contacte pas ces services) :
+    un lien collé dont le titre a disparu du catalogue ne sera découvert qu'en l'ouvrant.
   - Sur un téléphone à l'horizontale, l'éditeur de chansons et la bibliothèque restent à l'étroit
     (le prompteur, lui, est adapté).
 
 
-5. RACCOURCIS (clavier ou pédale Bluetooth)
+6. RACCOURCIS (clavier ou pédale Bluetooth)
 -------------------------------------------
   Espace            démarre / arrête le défilement
   ← →               chanson précédente / suivante
@@ -109,12 +149,14 @@ ne sont jamais touchées. Si vous ajoutez un fichier à la liste de sw.js, chang
   F                 plein écran            Échap   retour à la bibliothèque
 
 
-6. TESTS AUTOMATIQUES (facultatif, pour qui développe)
+7. TESTS AUTOMATIQUES (facultatif, pour qui développe)
 -----------------------------------------------------
-  Dans ce dossier :   npm install jsdom
-                      node test-setlist.js
-  Les 316 tests simulent le navigateur (jsdom) : bibliothèque, éditeur, prompteur, repères de section, partage,
-  import / export, Drive simulé, fichiers de l'installation hors ligne.
-  Ce que jsdom ne peut pas vérifier (mise en page réelle, service worker, menu de partage d'un iPhone) a été
-  contrôlé séparément dans un vrai Chromium ; le menu de partage d'iOS ou d'Android, lui, n'a pu être
-  essayé que simulé : testez l'envoi d'un set sur vos propres appareils avant de compter dessus.
+  Dans un dossier contenant index.html et test-setlist.js :   npm install jsdom
+                                                              node test-setlist.js
+  Les 470 tests simulent le navigateur (jsdom) : bibliothèque, éditeur, prompteur, repères de section,
+  partage, import / export, liens d'écoute, playlist Spotify contre un faux Spotify, Drive simulé, fichiers de
+  l'installation hors ligne.
+  Ce que jsdom ne peut pas vérifier (mise en page réelle, service worker, redirection de connexion Spotify,
+  menu de partage d'un iPhone) a été contrôlé séparément dans un vrai Chromium ; le menu de partage d'iOS ou
+  d'Android, et les vrais serveurs Spotify / Apple Music, n'ont pu être essayés que simulés : testez sur vos
+  propres appareils avant de compter dessus.

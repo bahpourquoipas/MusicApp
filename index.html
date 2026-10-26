@@ -12,7 +12,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="MusicApp">
 <meta name="musicapp-shell" content="3">
-<meta name="musicapp-version" content="3.0.0">
+<meta name="musicapp-version" content="4.0.0">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='5.5' fill='%230A0B0F'/%3E%3Cg transform='translate(3.9 4.3) scale(.675)' fill='none' stroke='%23FFB648' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='8.2' r='2.6' fill='%23FFB648' stroke='none'/%3E%3Cpath d='M12 1.4v2M5.6 8.2h2M16.4 8.2h2M8.4 11.6 5 21h14l-3.4-9.4Z'/%3E%3C/g%3E%3C/svg%3E">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -970,6 +970,141 @@ html:fullscreen, html:-webkit-full-screen{ background: var(--bg-void); }
   .modal-box.modal-share{ padding:14px; }
 }
 
+/* Écouter : liens Spotify et Apple Music */
+.modal-box.modal-listen{ max-width:500px; }
+.listen-list{ list-style:none; margin:12px 0 16px; padding:0; display:flex; flex-direction:column; gap:8px; }
+.listen-row{
+  display:flex; align-items:center; flex-wrap:wrap; gap:8px 12px; padding:10px 12px;
+  border:1px solid var(--line); border-radius: var(--radius-md); background: var(--bg-elevated);
+}
+.listen-row.is-exact{ border-color: var(--accent); background: var(--accent-soft); }
+.listen-badge{
+  flex:0 0 auto; width:34px; height:34px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center; background: var(--bg-panel); color: var(--text-muted);
+}
+.listen-row.is-exact .listen-badge{ color: var(--accent); }
+.listen-badge svg{ width:18px; height:18px; }
+.listen-info{ flex:1 1 110px; min-width:0; display:flex; flex-direction:column; gap:1px; }
+.listen-name{ font-weight:800; font-size:15px; color: var(--text-primary); }
+.listen-note{ color: var(--text-muted); font-size:12.5px; line-height:1.4; overflow-wrap:anywhere; }
+.listen-actions{ flex:0 0 auto; display:flex; align-items:center; gap:6px; margin-left:auto; }
+.listen-actions a.btn{ text-decoration:none; }
+.listen-actions .icon-btn{ width:38px; height:38px; }
+.listen-actions .icon-btn svg{ width:16px; height:16px; }
+.listen-paste .share-link-row{ margin-bottom:8px; }
+.listen-paste .share-link-row input[type=text]{ font-family: var(--font-ui); font-size:14px; }
+#listenPasteHint.is-error{ color: var(--danger-hover); }
+#btnListenSave[disabled]{ opacity:.45; pointer-events:none; }
+.song-row .song-actions .listen-btn.is-linked{ color: var(--accent); }
+@media (pointer: coarse){
+  .listen-actions .btn, .listen-paste .btn{ min-height:44px; }
+  .listen-actions .icon-btn{ width:44px; height:44px; }
+}
+@media (max-width: 640px){
+  #modalListen{ padding:8px; }
+  .modal-box.modal-listen{ padding:14px; }
+  /* l'éditeur compte un bouton de plus (casque) : l'en-tête se resserre et le titre reste sur une ligne */
+  .editor-header{ gap:6px; padding:10px 10px; }
+  .editor-header h2{
+    font-size:14.5px; line-height:1.2; min-width:0; overflow-wrap:anywhere;
+    display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2; line-clamp:2; overflow:hidden;
+  }
+}
+/* écran bas (téléphone à l'horizontale) : tout doit tenir sans faire défiler la fenêtre */
+@media (max-height: 520px){
+  .modal-box.modal-listen{ padding:12px 18px; }
+  .listen-list{ margin:6px 0 10px; gap:6px; }
+  .listen-row{ padding:6px 10px; }
+  .listen-paste .hint{ font-size:12px; line-height:1.45; }
+}
+
+/* Écouter la setlist : une playlist Spotify, une playlist Apple Music */
+.modal-box.modal-pllisten{ max-width:620px; padding:18px 18px 16px; }
+.pll-lead{ margin:0 0 12px !important; font-size:13.5px; }
+.pll-cards{ display:flex; flex-direction:column; gap:10px; margin-bottom:14px; }
+.pll-card{
+  display:flex; flex-direction:column; gap:9px; padding:12px 14px;
+  border:1px solid var(--line); border-radius: var(--radius-md); background: var(--bg-elevated);
+}
+.pll-card.is-linked{ border-color: var(--accent); background: var(--accent-soft); }
+.pll-card-head{ display:flex; align-items:center; gap:10px; }
+.pll-card-head h4{ margin:0; font-size:15px; font-weight:800; color: var(--text-primary); }
+.pll-count{ margin-left:auto; font-size:12.5px; color: var(--text-muted); text-align:right; }
+.pll-actions{ display:flex; flex-wrap:wrap; gap:8px; }
+.pll-actions .btn{ flex:1 1 auto; }
+.pll-actions .btn[disabled]{ opacity:.45; pointer-events:none; }
+.pll-saved{ display:flex; align-items:center; flex-wrap:wrap; gap:4px 10px; margin:0; font-size:13.5px; color: var(--text-primary); }
+.pll-saved a{ color: var(--accent); font-weight:700; }
+.pll-saved .icon-btn{ width:30px; height:30px; margin-left:auto; }
+.pll-saved .icon-btn svg{ width:14px; height:14px; }
+.pll-card .hint{ margin:0; font-size:12.5px; line-height:1.5; }
+.pll-paste{ margin-bottom:12px; }
+#plListenPasteHint.is-error{ color: var(--danger-hover); }
+#btnPlListenSave[disabled]{ opacity:.45; pointer-events:none; }
+.pll-tracks{ border-top:1px solid var(--line); padding-top:10px; }
+.pll-tracks summary{ cursor:pointer; font-weight:700; font-size:13.5px; color: var(--text-muted); }
+.pll-track-list{ list-style:none; margin:10px 0 0; padding:0; display:flex; flex-direction:column; gap:7px; }
+.pll-track-list li{ display:flex; align-items:center; flex-wrap:wrap; gap:4px 10px; font-size:13.5px; }
+.pll-num{ flex:0 0 24px; text-align:right; color: var(--text-faint); font-weight:700; }
+.pll-song{ flex:1 1 150px; min-width:0; overflow-wrap:anywhere; color: var(--text-primary); }
+.pll-song i{ font-style:normal; color: var(--text-muted); }
+.pll-links{ display:flex; gap:6px; margin-left:auto; }
+.pll-chip{
+  display:inline-flex; align-items:center; padding:4px 10px; border-radius:999px;
+  border:1px solid var(--line); background: var(--bg-panel); color: var(--text-muted);
+  font-size:12.5px; font-weight:700; text-decoration:none;
+}
+.pll-chip.is-exact{ border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+.pl-action-btn.is-linked{ color: var(--accent); }
+@media (pointer: coarse){
+  .pll-actions .btn, .pll-paste .btn{ min-height:44px; }
+  .pll-chip{ min-height:44px; padding:0 14px; }
+  .pll-saved .icon-btn{ width:44px; height:44px; }
+}
+@media (max-width: 640px){
+  #modalPlaylistListen{ padding:8px; }
+  .modal-box.modal-pllisten{ padding:14px 12px 12px; }
+}
+@media (max-height: 520px){
+  .modal-box.modal-pllisten{ padding:12px 14px; }
+  .pll-lead{ display:none; }
+}
+
+/* Créer la playlist sur Spotify (option avancée) */
+.modal-box.modal-spotify{ --sp-pad:18px; max-width:640px; padding:18px var(--sp-pad) 0; overflow-x:hidden; max-height: min(92vh, 860px); }
+.modal-spotify .plimport-actions{ margin:0 calc(-1 * var(--sp-pad)); padding-left:var(--sp-pad); padding-right:var(--sp-pad); }     /* le pied collant suit le remplissage de la fenêtre */
+#spBody:not([data-step="review"]){ padding-bottom:18px; }
+.sp-lead{ margin:0 0 12px; font-size:14px; line-height:1.55; color: var(--text-primary); }
+.sp-warn{
+  margin:0 0 12px; padding:10px 12px; border-radius: var(--radius-sm); border:1px solid var(--danger-hover);
+  background: var(--bg-elevated); font-size:13.5px; line-height:1.5; color: var(--text-primary); overflow-wrap:anywhere;
+}
+.sp-note{ margin:0 0 10px !important; font-size:12.5px; }
+.sp-steps{ margin:0 0 14px; padding-left:20px; }
+.modal-box .sp-steps li{ font-size:13.5px; line-height:1.6; color: var(--text-muted); margin-bottom:6px; }
+.sp-steps a{ color: var(--accent); font-weight:700; }
+.sp-redirect{ display:flex; gap:8px; margin-top:6px; }
+.sp-redirect input{ flex:1 1 auto; min-width:0; margin-bottom:0 !important; font-family: var(--font-mono); font-size:12.5px; }
+#spClientHint.is-error{ color: var(--danger-hover); }
+.sp-bar{ display:block; width:100%; height:10px; margin:6px 0 16px; accent-color: var(--accent); }
+.sp-row .sp-detail{ grid-column:3 / -1; margin:0 0 6px; font-size:12.5px; color: var(--text-muted); overflow-wrap:anywhere; }
+.sp-row .sp-link{ color: var(--accent); font-weight:700; }
+.sp-row .sp-pick{ min-width:0; width:100%; text-overflow:ellipsis; }
+.pli-row.is-ok .pli-badge, .pli-row.is-link .pli-badge{ border-color: var(--success); color: var(--success); }
+.pli-row.is-check .pli-badge{ border-color: var(--accent); color: var(--accent); }
+.pli-row.is-none .pli-badge, .pli-row.is-error .pli-badge{ border-color: var(--danger-hover); color: var(--danger-hover); }
+.sp-save{ margin:6px 0 14px; }
+@media (pointer: coarse){
+  .modal-spotify .btn{ min-height:44px; }
+}
+@media (max-width: 520px){
+  #modalSpotify{ padding:8px; }
+  .modal-box.modal-spotify{ --sp-pad:12px; padding:14px var(--sp-pad) 0; }
+}
+@media (max-height: 520px){
+  .modal-box.modal-spotify{ --sp-pad:14px; padding:12px var(--sp-pad) 0; }
+}
+
 /* Pulseur du métronome : un petit disque ambre dans le coin du texte, discret mais visible de loin */
 .metro-pulse{
   position:absolute; top:10px; right:12px; z-index:5;
@@ -1337,29 +1472,65 @@ html:fullscreen, html:-webkit-full-screen{ background: var(--bg-void); }
 .plshare-steps li:last-child{ margin-bottom:0; }
 .plshare-steps b{ color: var(--text-primary); }
 
+/* La fenêtre défile d'un bloc (réglages, liste, playlists) ; la barre d'actions reste visible en bas : sur un petit écran,
+   une liste qui défilerait seule n'aurait que deux lignes de hauteur. */
 .modal-box.modal-plimport{
-  max-width:640px; padding:18px 18px 14px; overflow:hidden;
-  display:flex; flex-direction:column; max-height: min(92vh, 820px);
+  max-width:640px; padding:18px 18px 0; overflow-x:hidden; max-height: min(92vh, 860px);
 }
-.plimport-name{ display:block; flex:0 0 auto; margin-bottom:10px; }
+.plimport-make{ margin-bottom:10px; }
+.plimport-check{ display:flex; align-items:center; gap:10px; margin:0 0 8px; font-size:14px; font-weight:700; cursor:pointer; }
+.plimport-check input{ width:22px; height:22px; margin:0; accent-color: var(--accent); cursor:pointer; flex:0 0 auto; }
+.plimport-name{ display:block; }
 .plimport-name input{ margin-bottom:0 !important; }
-.plimport-summary{ flex:0 0 auto; margin:0 0 10px !important; font-size:13.5px; color: var(--text-primary) !important; }
-.plimport-policy{ flex:0 0 auto; margin-bottom:10px; }
+.plimport-name input:disabled{ opacity:.45; }
+.plimport-summary{ margin:0 0 10px !important; font-size:13.5px; color: var(--text-primary) !important; }
+.plimport-policy{ margin-bottom:10px; }
 .plimport-policy .hint{ margin-top:6px; }
+.plimport-tools{ flex-wrap:wrap; }
+.plimport-tools .chip-btn{ margin-left:auto; }
+.plimport-tools .chip-btn[aria-pressed="true"]{ background: var(--accent-soft-2); border-color: var(--accent); color: var(--accent); }
+.plimport-tools[hidden], .plimport-tools .chip-btn[hidden]{ display:none; }
 .pli-list{
-  list-style:none; margin:0 0 12px; padding:0; flex:1 1 auto; min-height:110px; overflow-y:auto;
+  list-style:none; margin:0 0 12px; padding:0;
   display:flex; flex-direction:column; gap:4px;
 }
 .pli-row{
-  display:flex; align-items:center; gap:10px; padding:7px 10px 7px 8px;
+  display:grid; grid-template-columns:auto 24px minmax(0,1fr) auto; align-items:center; column-gap:6px; padding:4px 10px 4px 2px;
   border-radius: var(--radius-sm); background: var(--bg-elevated); border:1px solid transparent;
 }
+.pli-row > .pli-action{ grid-column:3 / -1; justify-self:start; margin:0 0 8px; }
+.pli-row .pli-title{ white-space:normal; overflow-wrap:anywhere; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; }
+.pli-row .sec-check, .pli-pl .sec-check{ margin:0; padding:7px; flex:0 0 auto; }
+@media (pointer: coarse){ .pli-row .sec-check, .pli-pl .sec-check{ padding:11px; } }       /* au doigt : zone de 44 px */
+.pli-row.is-off, .pli-pl.is-off{ opacity:.5; }
+.pli-action{
+  height:36px; max-width:100%; padding:0 30px 0 10px; border-radius: var(--radius-sm);
+  border:1px solid var(--line); background-color: var(--bg-panel); color: var(--text-primary);
+  font-size:13.5px; font-weight:700; cursor:pointer; appearance:none; -webkit-appearance:none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238B90A0' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat:no-repeat; background-position: right 9px center; background-size:12px;
+}
+.pli-action:focus{ border-color: var(--accent); }
+.pli-action:disabled{ opacity:.5; cursor:default; }
+@media (pointer: coarse){ .pli-action{ height:44px; } }
+.plimport-playlists{ margin:0 0 12px; }
+.pli-pls{ list-style:none; margin:6px 0 0; padding:0; display:flex; flex-direction:column; gap:4px; max-height:170px; overflow-y:auto; }
+.pli-pl{ display:flex; align-items:center; gap:6px; padding:2px 10px 2px 2px; border-radius: var(--radius-sm); background: var(--bg-elevated); }
+.pli-pl .pli-main{ flex-direction:row; align-items:baseline; gap:8px; }
+.pli-pl .pli-title{ flex:0 1 auto; }
+.pli-pl .pli-artist{ flex:0 0 auto; }
+.plimport-actions{
+  position:sticky; bottom:0; z-index:1; flex-wrap:wrap; margin:0 -18px; padding:12px 18px calc(12px + var(--safe-bottom));
+  background: var(--bg-panel); border-top:1px solid var(--line);
+}
+.plimport-replace{ margin:0 0 14px; padding-top:10px; border-top:1px solid var(--line); }
+.plimport-replace .hint{ margin:0 0 8px; }
+.plimport-replace[hidden]{ display:none; }
 .pli-row.is-diff{ border-color: var(--accent-soft-2); background: var(--accent-soft); }
 .pli-num{ flex:0 0 24px; text-align:right; font-family: var(--font-mono); font-size:13px; font-weight:700; color: var(--text-faint); }
 .pli-main{ flex:1 1 auto; min-width:0; display:flex; flex-direction:column; }
 .pli-title{ font-size:14.5px; font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .pli-artist{ font-size:12px; color: var(--text-muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.pli-note{ font-size:12px; font-weight:700; color: var(--accent); }
 .pli-badge{
   flex:0 0 auto; padding:2px 9px; border-radius: var(--radius-pill); border:1px solid var(--line);
   font-size:11.5px; font-weight:800; white-space:nowrap; color: var(--text-muted);
@@ -1367,8 +1538,11 @@ html:fullscreen, html:-webkit-full-screen{ background: var(--bg-void); }
 .pli-row.is-new .pli-badge{ border-color: var(--success); color: var(--success); }
 .pli-row.is-diff .pli-badge{ border-color: var(--accent); color: var(--accent); }
 @media (max-width: 520px){
-  .modal-box.modal-plshare, .modal-box.modal-plimport{ padding:14px 12px 12px; }
-  .pli-num{ flex-basis:20px; }
+  .modal-box.modal-plshare{ padding:14px 12px 12px; }
+  .modal-box.modal-plimport{ padding:14px 12px 0; }
+  .plimport-actions{ margin:0 -12px; padding:10px 12px calc(10px + var(--safe-bottom)); }
+  .pli-row{ grid-template-columns:auto 20px minmax(0,1fr) auto; }
+  .plimport-actions .btn{ padding-left:16px; padding-right:16px; }
 }
 
 /* ================= TOASTS ================= */
@@ -1573,6 +1747,9 @@ kbd{
     <div class="editor-header">
       <button class="icon-btn" id="btnEditorBack" aria-label="Retour"><span data-icon="chevleft"></span></button>
       <h2 id="editorHeading">Nouvelle chanson</h2>
+      <button class="icon-btn" id="btnEditorListen" aria-label="Écouter (Spotify, Apple Music)" title="Écouter (Spotify, Apple Music)" hidden>
+        <span data-icon="headphones"></span>
+      </button>
       <button class="icon-btn" id="btnDuplicateSong" aria-label="Dupliquer la chanson" title="Dupliquer la chanson" hidden>
         <span data-icon="copy"></span>
       </button>
@@ -1922,6 +2099,27 @@ kbd{
   </div>
 </div>
 
+<div class="modal-overlay" id="modalListen" hidden>
+  <div class="modal-box modal-listen" role="dialog" aria-modal="true" aria-labelledby="listenTitle">
+    <div class="share-head">
+      <div>
+        <h3 id="listenTitle">Écouter ce titre</h3>
+        <p class="hint" id="listenSubtitle"></p>
+      </div>
+      <button class="icon-btn" id="btnCloseListen" aria-label="Fermer"><span data-icon="close"></span></button>
+    </div>
+    <ul class="listen-list" id="listenList"></ul>
+    <div class="listen-paste">
+      <label class="seg-label" for="listenPasteInput">Lien exact de ce titre</label>
+      <div class="share-link-row">
+        <input type="text" id="listenPasteInput" placeholder="Collez un lien Spotify ou Apple Music" autocomplete="off" autocapitalize="off" spellcheck="false" inputmode="url" aria-describedby="listenPasteHint">
+        <button class="btn btn-ghost btn-sm" id="btnListenSave" disabled>Enregistrer</button>
+      </div>
+      <p class="hint" id="listenPasteHint"></p>
+    </div>
+  </div>
+</div>
+
 <div class="modal-overlay" id="modalShareImport" hidden>
   <div class="modal-box modal-share-import" role="dialog" aria-modal="true" aria-labelledby="shareImportTitle">
     <h3 id="shareImportTitle">Fiche reçue</h3>
@@ -2125,6 +2323,45 @@ kbd{
   </div>
 </div>
 
+<div class="modal-overlay" id="modalPlaylistListen" hidden>
+  <div class="modal-box modal-pllisten" role="dialog" aria-modal="true" aria-labelledby="plListenTitle">
+    <div class="set-head">
+      <div>
+        <h3 id="plListenTitle">Écouter la setlist</h3>
+        <p class="hint" id="plListenSubtitle"></p>
+      </div>
+      <button class="icon-btn" id="btnClosePlListen" aria-label="Fermer"><span data-icon="close"></span></button>
+    </div>
+    <p class="hint pll-lead">Une playlist Spotify et une playlist Apple Music pour travailler le set au casque, dans l'ordre du set. Les liens exacts viennent des fiches (bouton casque d'une chanson) ; sans lien, le titre est cherché.</p>
+    <div class="pll-cards" id="plListenCards"></div>
+    <div class="listen-paste pll-paste">
+      <label class="seg-label" for="plListenPasteInput">Lien de la playlist de cette setlist</label>
+      <div class="share-link-row">
+        <input type="text" id="plListenPasteInput" placeholder="Collez le lien d'une playlist Spotify ou Apple Music" autocomplete="off" autocapitalize="off" spellcheck="false" inputmode="url" aria-describedby="plListenPasteHint">
+        <button class="btn btn-ghost btn-sm" id="btnPlListenSave" disabled>Enregistrer</button>
+      </div>
+      <p class="hint" id="plListenPasteHint"></p>
+    </div>
+    <details class="pll-tracks" id="plListenTracksBox">
+      <summary id="plListenTracksSummary">Les titres, un par un</summary>
+      <ol class="pll-track-list" id="plListenTracks"></ol>
+    </details>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modalSpotify" data-keep-open="1" hidden>
+  <div class="modal-box modal-spotify" role="dialog" aria-modal="true" aria-labelledby="spTitle">
+    <div class="set-head">
+      <div>
+        <h3 id="spTitle">Créer la playlist sur Spotify</h3>
+        <p class="hint" id="spSubtitle"></p>
+      </div>
+      <button class="icon-btn" id="btnCloseSpotify" aria-label="Fermer"><span data-icon="close"></span></button>
+    </div>
+    <div id="spBody"></div>
+  </div>
+</div>
+
 <div class="modal-overlay" id="modalPlaylistImport" data-keep-open="1" hidden>
   <div class="modal-box modal-plimport" role="dialog" aria-modal="true" aria-labelledby="plImportTitle">
     <div class="set-head">
@@ -2134,10 +2371,16 @@ kbd{
       </div>
       <button class="icon-btn" id="btnClosePlImport" aria-label="Fermer"><span data-icon="close"></span></button>
     </div>
-    <label class="plimport-name">
-      <span class="seg-label">Nom de la playlist</span>
-      <input type="text" id="plImportName" maxlength="100" autocomplete="off" spellcheck="false" enterkeyhint="done">
-    </label>
+    <div class="plimport-make" id="plImportMakeBox">
+      <label class="plimport-check">
+        <input type="checkbox" id="plImportMake" checked>
+        <span>Créer une playlist avec les chansons cochées</span>
+      </label>
+      <label class="plimport-name">
+        <span class="seg-label">Nom de la playlist</span>
+        <input type="text" id="plImportName" maxlength="100" autocomplete="off" spellcheck="false" enterkeyhint="done">
+      </label>
+    </div>
     <p class="hint plimport-summary" id="plImportSummary"></p>
     <div class="seg-group plimport-policy" id="plImportPolicy" hidden>
       <span class="seg-label">Quand une chanson existe déjà mais diffère</span>
@@ -2148,8 +2391,24 @@ kbd{
       </div>
       <p class="hint" id="plImportPolicyHint"></p>
     </div>
+    <div class="meta-keys-tools plimport-tools" id="plImportTools">
+      <span class="seg-label">Cocher</span>
+      <div class="segmented" role="group" aria-label="Cocher les chansons à importer">
+        <button type="button" class="seg-btn" id="btnPlImportAll">Toutes</button>
+        <button type="button" class="seg-btn" id="btnPlImportNone">Aucune</button>
+      </div>
+      <button type="button" class="chip-btn" id="btnPlImportHideSame" aria-pressed="false" hidden>Masquer les identiques</button>
+    </div>
     <ol class="pli-list" id="plImportList"></ol>
-    <div class="modal-actions">
+    <div class="plimport-playlists" id="plImportPlaylistsBox" hidden>
+      <span class="seg-label">Playlists de la sauvegarde</span>
+      <ul class="pli-pls" id="plImportPlaylists"></ul>
+    </div>
+    <div class="plimport-replace" id="plImportReplaceBox" hidden>
+      <p class="hint">Pour retrouver exactement l'état de la sauvegarde (chansons, playlists et réglages de l'appli), vous pouvez tout remplacer.</p>
+      <button class="btn btn-ghost" id="btnPlImportReplaceAll">Tout remplacer…</button>
+    </div>
+    <div class="modal-actions plimport-actions">
       <button class="btn btn-ghost" id="btnPlImportCancel">Annuler</button>
       <button class="btn btn-accent" id="btnPlImportAdd">Ajouter la playlist</button>
     </div>
@@ -2228,12 +2487,29 @@ kbd{
       </ul>
       <h4>Partager une fiche avec un autre musicien</h4>
       <ul>
-        <li>L'icône <b>QR code</b> (au prompteur, dans la liste, ou dans le menu ⋯ d'une chanson) affiche un <b>QR code</b> et un <b>lien</b> : titre, artiste, tonalité, tempo, mesure, paroles et accords. Tout est fabriqué sur l'appareil, sans Internet ni service en ligne. Votre transposition personnelle n'est pas transmise.</li>
+        <li>L'icône <b>QR code</b> (au prompteur, dans la liste, ou dans le menu ⋯ d'une chanson) affiche un <b>QR code</b> et un <b>lien</b> : titre, artiste, tonalité, tempo, mesure, paroles et accords, et les liens d'écoute enregistrés. Tout est fabriqué sur l'appareil, sans Internet ni service en ligne. Votre transposition personnelle n'est pas transmise.</li>
         <li>Sur l'autre tablette ou téléphone, ouvrez l'<b>appareil photo</b> et visez le code : quand l'appli est hébergée en https, MusicApp s'ouvre et propose la fiche. Rien n'est ajouté sans accord ; si une chanson de même titre existe déjà, vous choisissez entre la remplacer et en garder une copie.</li>
         <li>Le lien, lui, se copie ou s'envoie (message, AirDrop…). Le destinataire peut aussi le coller dans <b>Réglages → Coller un lien</b>.</li>
         <li>Si l'appli est ouverte depuis un fichier, le code ne contient que la fiche : il se lit avec <b>Réglages → Scanner un QR code</b> (réservé aux navigateurs qui savent lire les QR codes, comme Chrome sur Android ; l'appareil photo ordinaire n'afficherait que du texte). Indiquer l'adresse publique de MusicApp dans les Réglages ou dans la fenêtre de partage donne un code que l'appareil photo ouvre directement.</li>
         <li>Une fiche très longue ne tient pas toujours dans un QR code : le lien reste alors disponible. Plus le code est dense, plus il faut le présenter de près, écran bien lumineux.</li>
         <li><b>iPad / iPhone</b> : si MusicApp est installée sur l'écran d'accueil, l'appareil photo ouvre le lien dans Safari, dont les données sont séparées de celles de l'icône. Copiez alors le lien (appui long) et collez-le dans l'appli de l'écran d'accueil : Réglages → Coller un lien.</li>
+      </ul>
+      <h4>Écouter un titre : Spotify et Apple Music</h4>
+      <ul>
+        <li>L'icône <b>casque</b> (dans la liste, dans le menu ⋯ d'une chanson ou dans l'éditeur) ouvre une fenêtre avec une ligne par service. Tant qu'aucun lien n'est enregistré, le bouton lance la <b>recherche</b> du titre et de l'artiste sur Spotify ou Apple Music : dans l'appli du service si elle est installée, sinon dans le navigateur.</li>
+        <li>Pour aller droit au bon titre : dans Spotify ou Apple Music, <b>Partager → Copier le lien</b>, puis collez-le dans le champ de la fenêtre. Le lien exact est <b>enregistré avec la chanson</b> (le casque devient ambre) et le bouton l'ouvre directement. Les deux adresses peuvent être collées d'un coup ; un message « Annuler » ou la croix retire un lien.</li>
+        <li>Le lien enregistré suit la chanson : copie, fusion de doublons, sauvegarde, set partagé en fichier, QR code et lien de partage. À la réception, il complète vos liens sans jamais en effacer.</li>
+        <li>MusicApp ne se connecte à aucun de ces services et ne leur envoie rien tant que vous ne touchez pas un lien. Seules les adresses de titre, d'album, d'artiste ou de playlist de Spotify et d'Apple Music sont acceptées. Sans réseau, les boutons n'aboutissent pas, mais les liens restent enregistrés.</li>
+      </ul>
+      <h4>Écouter toute la setlist : playlist Spotify et Apple Music</h4>
+      <ul>
+        <li>Dans une playlist ouverte, l'icône <b>casque</b> à côté de son nom (ou <b>Outils → Écouter cette playlist</b>) ouvre « Écouter la setlist » : une carte Spotify, une carte Apple Music et la liste des titres, un par un, dans l'ordre du set. Un titre s'ouvre sur son <b>lien exact</b> quand la fiche en garde un (voir ci-dessus), sinon sur une recherche.</li>
+        <li><b>Spotify, sans compte ni réglage</b> : <b>Copier N liens</b> place les adresses des titres dans le presse-papiers ; dans l'appli Spotify <b>pour ordinateur</b>, ouvrez une playlist, cliquez dans la liste des titres et collez (Ctrl+V ou ⌘V). Ce raccourci de Spotify marche le plus souvent, mais Spotify ne le garantit pas.</li>
+        <li><b>Apple Music</b> : Apple ne laisse pas une appli créer une playlist sans un compte développeur payant. Le plus simple : <b>Copier la liste « Artiste - Titre »</b> ou <b>Télécharger en CSV</b>, puis un service de transfert de playlists (TuneMyMusic, Soundiiz…) qui crée la playlist dans Apple Music. Vérifiez ensuite chaque titre : la reconnaissance se fait sur le titre et l'artiste.</li>
+        <li>Une fois la playlist créée, collez son lien (Partager → Copier le lien) dans le champ de la fenêtre : il est <b>gardé avec la setlist</b> (le casque de la playlist devient ambre, le bouton « Ouvrir » y mène) et voyage avec le fichier de la playlist et la sauvegarde. Une playlist <b>dupliquée</b> n'hérite pas de ce lien.</li>
+        <li><b>Créer la playlist directement sur Spotify</b> (option avancée) : le bouton <b>Créer la playlist sur Spotify…</b> l'ajoute à votre compte. Spotify ne l'autorise qu'avec une <b>appli développeur à votre nom</b> (gratuite, mais son propriétaire doit avoir un abonnement Premium) : l'assistant vous guide, vous déclarez l'adresse de redirection qu'il affiche et vous collez le « Client ID » de l'appli (ce n'est pas un secret). MusicApp doit être ouverte depuis une adresse <b>https://</b> (GitHub Pages par exemple).</li>
+        <li>La connexion se fait sur la page de Spotify : aucun mot de passe ne passe par MusicApp. Les jetons de connexion restent sur cet appareil, jamais dans les sauvegardes, les partages ni Google Drive ; <b>Se déconnecter</b> les efface. L'appli cherche ensuite chaque titre et affiche un écran de <b>vérification</b> : vous voyez la version choisie, vous décochez ce qui ne convient pas, et rien n'est créé avant votre accord. Vous pouvez fermer la fenêtre pendant la création.</li>
+        <li>Limites : une appli Spotify en « mode développement » n'accepte que quelques comptes déclarés, et Spotify peut la refuser (erreur 403) : l'appli l'explique alors, et les deux chemins sans compte restent disponibles. Sans réseau rien de tout cela ne fonctionne, mais les liens enregistrés restent là.</li>
       </ul>
       <h4>Tempo, métronome et décompte</h4>
       <ul>
@@ -2287,7 +2563,7 @@ kbd{
       <h4>Partager un set entier</h4>
       <ul>
         <li>Un set ne tient pas dans un QR code : il voyage dans <b>un fichier</b>. Ouvrez la playlist, puis touchez l'icône de partage à côté de son nom (ou <b>Outils → Partager cette playlist</b>). <b>Envoyer…</b> ouvre le menu de partage de l'appareil (AirDrop, Messages, e-mail…) ; <b>Télécharger le fichier</b> l'enregistre, pour l'envoyer par le moyen de votre choix.</li>
-        <li>Le fichier contient les titres dans l'ordre du set : paroles, accords, tonalité, tempo, mesure et durée, avec la pause entre les titres, l'objectif et l'heure de début. Votre transposition et vos vitesses de défilement restent chez vous.</li>
+        <li>Le fichier contient les titres dans l'ordre du set : paroles, accords, tonalité, tempo, mesure, durée et liens d'écoute, avec la pause entre les titres, l'objectif et l'heure de début. Votre transposition et vos vitesses de défilement restent chez vous.</li>
         <li>Pour la <b>recevoir</b> : enregistrer le fichier sur l'appareil (iPhone, iPad : « Enregistrer dans Fichiers »), puis, dans MusicApp, <b>Outils → Recevoir une playlist</b> (ou Réglages → Importer) et choisir le fichier. Un <b>aperçu</b> montre ce qui est nouveau, ce qui existe déjà et ce qui diffère ; rien n'est ajouté avant votre accord, et « Annuler » défait tout l'import.</li>
         <li>Quand une chanson du set existe déjà chez vous avec un texte différent, vous choisissez : <b>garder la vôtre</b> (par défaut), <b>la mettre à jour</b> avec la version reçue (titre, transposition et vitesse restent les vôtres) ou <b>garder les deux</b>. Pour une seule chanson, le QR code ou le lien de la fiche suffit.</li>
       </ul>
@@ -2300,9 +2576,18 @@ kbd{
         <li><b>Mises à jour</b> : quand une nouvelle version est disponible, un message propose de recharger ; rien ne se recharge tout seul pendant un morceau, et vos données ne sont jamais touchées par une mise à jour.</li>
         <li><b>Protéger mes données</b> demande au navigateur de ne jamais effacer le stockage de l'appli, même si l'appareil manque de place. Safari peut effacer les données d'un site resté plusieurs jours sans être ouvert ; une appli installée sur l'écran d'accueil n'est pas concernée.</li>
       </ul>
+      <h4>Importer des chansons</h4>
+      <ul>
+        <li><b>Réglages → Importer</b> (ou Outils → Recevoir une playlist) accepte un export <b>EasyZic</b> (.ezp), une <b>sauvegarde</b> MusicApp (.json), une <b>playlist</b> MusicApp partagée en fichier et une fiche <b>ChordPro</b> (.cho, .pro, .txt).</li>
+        <li>Un <b>écran d'import</b> liste chaque chanson du fichier avec son état : <b>Nouvelle</b>, <b>Déjà chez vous</b> (mêmes paroles et accords) ou <b>Différente</b> (même titre et même artiste, mais un autre texte). Décochez celles que vous ne voulez pas ; rien n'est ajouté avant « Ajouter la playlist » ou « Importer », et « Annuler » défait tout.</li>
+        <li>Pour chaque chanson <b>différente</b>, choisissez ligne par ligne : <b>garder la mienne</b> (par défaut), <b>mettre à jour</b> avec la version du fichier (votre titre, votre transposition, votre vitesse et vos instruments restent) ou <b>garder les deux</b>. Les trois boutons du haut règlent toutes les lignes d'un coup ; « Masquer les identiques » allège la liste d'un gros fichier.</li>
+        <li>Un export EasyZic ou un set reçu peut devenir une <b>playlist</b> (nom modifiable ; décochez la case pour n'ajouter que les chansons). Une sauvegarde permet de choisir aussi les <b>playlists</b> à recréer. Les chansons venues d'EasyZic ou d'une sauvegarde gardent leur vitesse (et, pour une sauvegarde, leur transposition) ; celles d'un set reçu repartent de vos réglages.</li>
+        <li>« <b>Tout remplacer…</b> » (sauvegarde seulement) remet chansons, playlists et réglages exactement dans l'état du fichier, après confirmation. Sur une appli neuve, la restauration est directe.</li>
+        <li>Une fiche <b>ChordPro</b> inconnue est ajoutée tout de suite ; si une fiche de même titre existe déjà, l'écran d'import vous laisse choisir (identique : rien n'est ajouté).</li>
+      </ul>
       <h4>Sauvegarde</h4>
       <ul>
-        <li>Les données restent dans ce navigateur : exportez-les régulièrement depuis les Réglages (.json). Les fichiers EasyZic (.ezp), ChordPro (.cho, .pro, .txt) et les playlists MusicApp partagées en fichier peuvent être importés.</li>
+        <li>Les données restent dans ce navigateur : exportez-les régulièrement depuis les Réglages (.json). Les fichiers EasyZic (.ezp), ChordPro (.cho, .pro, .txt) et les playlists MusicApp partagées en fichier peuvent être importés (voir « Importer des chansons »).</li>
       </ul>
     </div>
     <div class="modal-actions" style="margin-top:18px;">
@@ -2329,7 +2614,7 @@ kbd{
    ========================================================================= */
 
 // Anciens noms conservés volontairement : renommer une clé de stockage ferait « disparaître » les données déjà enregistrées.
-const APP_VERSION = '3.0.0';                // affichée dans les Réglages ; identique au <meta name="musicapp-version">
+const APP_VERSION = '4.0.0';                // affichée dans les Réglages ; identique au <meta name="musicapp-version">
 const STORAGE_KEY = 'setlist_prompteur_v1';
 
 const ICON = {
@@ -2366,6 +2651,7 @@ const ICON = {
   clock: '<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15.5 14"/></svg>',
   sliders: '<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="7" x2="6.6" y2="7"/><line x1="11.4" y1="7" x2="20" y2="7"/><circle cx="9" cy="7" r="2.4"/><line x1="4" y1="17" x2="12.6" y2="17"/><line x1="17.4" y1="17" x2="20" y2="17"/><circle cx="15" cy="17" r="2.4"/></svg>',
   help: '<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.5"/><path d="M9.2 9.3a2.9 2.9 0 0 1 5.6 1c0 1.9-2.8 2.4-2.8 4.1"/><line x1="12" y1="17.6" x2="12.01" y2="17.6"/></svg>',
+  headphones: '<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15v-3a8 8 0 0 1 16 0v3"/><rect x="3" y="14.5" width="4.5" height="6.5" rx="1.6"/><rect x="16.5" y="14.5" width="4.5" height="6.5" rx="1.6"/></svg>',
 };
 
 const INSTRUMENTS = [
@@ -2661,6 +2947,7 @@ const DEFAULT_SETTINGS = {
   metaHintHidden: false,     // message « Compléter les fiches » (bibliothèque) masqué par l'utilisateur
   dupIgnored: [],            // paires de chansons que l'utilisateur a déclarées « pas des doublons » (identifiants triés, séparés par |)
   sectionBar: true,          // barre de sections (Couplet, Refrain…) au prompteur, quand la chanson a au moins deux repères
+  spotifyClientId: '',       // « Client ID » de l'appli Spotify de l'utilisateur (option avancée : créer une playlist Spotify depuis une setlist)
 };
 
 // Réglages enregistrés + valeurs par défaut (les sous-objets sont copiés : jamais partagés avec DEFAULT_SETTINGS).
@@ -2668,6 +2955,7 @@ function mergeSettings(saved){
   const merged = Object.assign({}, DEFAULT_SETTINGS, saved || {});
   merged.metronome = Object.assign({}, DEFAULT_SETTINGS.metronome, (saved && saved.metronome) || {});
   merged.dupIgnored = saved && Array.isArray(saved.dupIgnored) ? saved.dupIgnored.filter(k => typeof k === 'string').slice(0, 5000) : [];
+  merged.spotifyClientId = typeof merged.spotifyClientId === 'string' && /^[A-Za-z0-9]{16,64}$/.test(merged.spotifyClientId.trim()) ? merged.spotifyClientId.trim() : '';
   return merged;
 }
 
@@ -2816,29 +3104,12 @@ function convertChordProContent(rawText){
   return { title, artist, key, bpm, timeSig, content: outLines.join('\n').replace(/\n{3,}/g, '\n\n').trim() };
 }
 
-function importChordProFile(filename, rawText){
-  const converted = convertChordProContent(rawText);
-  const fallbackTitle = (filename || 'Chanson importée').replace(/\.(cho|pro|chopro|crd|txt)$/i, '').replace(/[_-]+/g, ' ').trim();
-  const song = Store.createSong({
-    title: converted.title || fallbackTitle || 'Chanson importée',
-    artist: converted.artist,
-    originalKey: converted.key,
-    bpm: converted.bpm,
-    timeSig: converted.timeSig,
-    content: converted.content,
-  });
-  if (UI.currentPlaylistId){
-    Store.addSongToPlaylist(UI.currentPlaylistId, song.id);
-  }
-  return song;
-}
-
 function stripBBCodeTags(line){
   return line.replace(/\[\/?(?:b|color(?:=#[0-9a-fA-F]{3,6})?)\]/gi, '');
 }
 
 function convertEasyZicContent(rawContenu, titre){
-  let text = (rawContenu || '').replace(/\r\n/g, '\n');
+  let text = (typeof rawContenu === 'string' ? rawContenu : '').replace(/\r\n/g, '\n');
 
   // 1. Retire la 1ere ligne si c'est juste le titre redit en gras (redondant avec le champ titre)
   let lines = text.split('\n');
@@ -2847,7 +3118,7 @@ function convertEasyZicContent(rawContenu, titre){
     const m = firstTrim.match(/^\[b\](.+)\[\/b\]$/i);
     if (m){
       const inner = stripBBCodeTags(m[1]).trim().toLowerCase();
-      const normTitre = (titre || '').trim().toLowerCase();
+      const normTitre = String(titre || '').trim().toLowerCase();
       if (normTitre && (inner === normTitre || inner.includes(normTitre) || normTitre.includes(inner))){
         lines.shift();
         while (lines.length && lines[0].trim() === '') lines.shift();
@@ -2880,7 +3151,7 @@ function convertEasyZicContent(rawContenu, titre){
 }
 
 function convertEasyZicItem(item){
-  const rawTitre = (item.titre || 'Sans titre').trim();
+  const rawTitre = (typeof item.titre === 'string' ? item.titre : '').trim() || 'Sans titre';
   let title = rawTitre, artist = '';
   const dashIdx = rawTitre.indexOf(' - ');
   if (dashIdx !== -1){
@@ -2896,25 +3167,182 @@ function convertEasyZicItem(item){
   };
 }
 
-function importEasyZicData(parsed, playlistName){
-  const order = Array.isArray(parsed.itemsOrder) ? parsed.itemsOrder : Object.keys(parsed.items);
-  const newSongs = [];
-  const songIds = [];
-  order.forEach(id => {
-    const item = parsed.items[id];
-    if (!item) return;
-    const song = convertEasyZicItem(item);
-    newSongs.push(song);
-    songIds.push(song.id);
+/* =========================================================================
+   LIENS D'ÉCOUTE : Spotify et Apple Music
+   =========================================================================
+   Deux sortes de liens par chanson :
+   - la RECHERCHE, toujours disponible : l'adresse de recherche publique du service, fabriquée avec le titre et l'artiste ;
+   - le LIEN EXACT, enregistré avec la chanson (song.links) quand on colle l'adresse d'un titre (Partager → Copier le lien).
+   L'appli ne se connecte à aucun service (ni compte, ni clé) et ne leur envoie rien avant un toucher sur un lien.
+   Un texte collé n'est jamais réutilisé tel quel : on y reconnaît l'adresse d'un titre, d'un album, d'un artiste ou
+   d'une playlist, puis on la RECONSTRUIT à partir des seuls éléments contrôlés (service, type, identifiant). Aucune autre
+   adresse (autre site, javascript:, data:…) ne peut donc être enregistrée, ni ouverte depuis l'appli. */
+
+const LISTEN_SERVICES = [
+  { id: 'spotify', name: 'Spotify' },
+  { id: 'apple',   name: 'Apple Music' },
+];
+
+// Une adresse (ou un « URI » Spotify) -> { service, kind, url } avec l'adresse reconstruite, ou null si ce n'est pas une adresse reconnue.
+// kind : track | album | artist | playlist | song | short (lien court de partage Spotify)
+function parseListenCandidate(raw){
+  let text = String(raw || '').trim().replace(/[)\]>.,;:!?]+$/, '');          // ponctuation collée à l'adresse dans une phrase
+  let m = /^spotify:(track|album|artist|playlist):([A-Za-z0-9]{16,32})$/i.exec(text);
+  if (m){
+    const kind = m[1].toLowerCase();
+    return { service: 'spotify', kind, url: 'https://open.spotify.com/' + kind + '/' + m[2] };
+  }
+  if (!/^https?:\/\//i.test(text)) text = 'https://' + text;
+  let u;
+  try { u = new URL(text); } catch (e) { return null; }
+  if (u.username || u.password || u.port) return null;                       // ni identifiant, ni mot de passe, ni port (le port par défaut du https disparaît tout seul)
+  const host = u.hostname.toLowerCase();
+  if (host === 'open.spotify.com'){
+    m = /^\/(?:intl-[a-z]{2,3}\/)?(track|album|artist|playlist)\/([A-Za-z0-9]{16,32})\/?$/.exec(u.pathname);
+    return m ? { service: 'spotify', kind: m[1], url: 'https://open.spotify.com/' + m[1] + '/' + m[2] } : null;
+  }
+  if (host === 'spotify.link' || host === 'spotify.app.link'){
+    m = /^\/([A-Za-z0-9]{4,32})\/?$/.exec(u.pathname);
+    return m ? { service: 'spotify', kind: 'short', url: 'https://' + host + '/' + m[1] } : null;
+  }
+  if (host === 'music.apple.com' || host === 'geo.music.apple.com' || host === 'itunes.apple.com'){
+    m = /^\/([a-z]{2})\/(album|song|artist|playlist)\/(?:([^/]{1,200})\/)?([A-Za-z0-9._-]{3,64})\/?$/.exec(u.pathname);
+    if (!m) return null;
+    const kind = m[2];
+    const id = m[4].replace(/^id(?=\d)/, '');                                   // anciennes adresses iTunes : « id1440857781 »
+    if (!(kind === 'playlist' ? /^pl\.[A-Za-z0-9._-]{4,64}$/ : /^\d{4,20}$/).test(id)) return null;
+    const slug = m[3] && /^[A-Za-z0-9%._~+-]+$/.test(m[3]) ? m[3] + '/' : '';  // le nom lisible n'est qu'un décor : un caractère inattendu et il disparaît
+    let url = 'https://music.apple.com/' + m[1] + '/' + kind + '/' + slug + id;
+    const track = u.searchParams.get('i');                                      // un titre d'un album : album/…?i=numéro
+    if (kind === 'album' && track && /^\d{4,20}$/.test(track)) url += '?i=' + track;
+    return { service: 'apple', kind, url };
+  }
+  return null;
+}
+
+// Tout ce qu'un texte collé contient d'adresses reconnues : { spotify?, apple? } (la première de chaque service ; « accept » : celles qui conviennent).
+// Le texte peut être une phrase de partage (« Écoute … sur Spotify https://… ») ou contenir les deux adresses.
+function findListenLinks(text, accept){
+  const found = {};
+  const pattern = /spotify:(?:track|album|artist|playlist):[A-Za-z0-9]+|(?:https?:\/\/)?(?:open\.spotify\.com|spotify\.link|spotify\.app\.link|geo\.music\.apple\.com|music\.apple\.com|itunes\.apple\.com)\/[^\s<>"'“”«»]*/gi;
+  (String(text || '').slice(0, 5000).match(pattern) || []).forEach((candidate) => {
+    const hit = parseListenCandidate(candidate);
+    if (hit && (!accept || accept(hit)) && !found[hit.service]) found[hit.service] = hit;
   });
-  newSongs.forEach(s => Store.state.songs.push(s));
-  const playlist = {
-    id: uid('pl'), name: (playlistName || 'Import EasyZic').trim() || 'Import EasyZic',
-    songIds, createdAt: Date.now(), updatedAt: Date.now(),
-  };
-  Store.state.playlists.push(playlist);
-  Store.save();
-  return { songCount: newSongs.length, playlistName: playlist.name };
+  return found;
+}
+
+// Des liens enregistrés (ou lus dans un fichier) -> { spotify?, apple? } où chaque adresse est reconnue puis reconstruite ; null s'il n'en reste aucune.
+function normalizeSongLinks(raw){
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
+  const out = {};
+  LISTEN_SERVICES.forEach(({ id }) => {
+    const hit = typeof raw[id] === 'string' ? parseListenCandidate(raw[id]) : null;
+    if (hit && hit.service === id) out[id] = hit.url;
+  });
+  return Object.keys(out).length ? out : null;
+}
+
+function songHasListenLinks(song){
+  return !!(song && song.links && (song.links.spotify || song.links.apple));
+}
+
+// Ce que l'on cherche : « Titre Artiste » (sans le « (copie) » d'une duplication, sans répéter l'artiste déjà dans le titre)
+function listenTidy(s){
+  return String(s || '').replace(/\s*\((?:copie|copy)(?:\s+\d+)?\)\s*$/i, '').replace(/\s+/g, ' ').trim();
+}
+function listenQuery(song){
+  const title = listenTidy(song.title), artist = listenTidy(song.artist);
+  const query = !artist || title.toLowerCase().includes(artist.toLowerCase()) ? title : title + ' ' + artist;
+  return query.slice(0, 120).trim();
+}
+
+// Apple Music range ses catalogues par pays : celui de la langue de l'appareil, la France à défaut
+function listenCountry(){
+  const lang = (typeof navigator !== 'undefined' && navigator.language) || '';
+  const m = /^[A-Za-z]{2,3}-([A-Za-z]{2})$/.exec(lang);
+  return m ? m[1].toLowerCase() : 'fr';
+}
+
+function listenSearchUrl(service, song){
+  const q = encodeURIComponent(listenQuery(song));
+  return service === 'spotify'
+    ? 'https://open.spotify.com/search/' + q
+    : 'https://music.apple.com/' + listenCountry() + '/search?term=' + q;
+}
+
+// « titre », « album », « artiste »… : ce que le lien enregistré ouvre
+function listenKindLabel(hit){
+  if (!hit) return 'lien';
+  if (hit.kind === 'track' || hit.kind === 'song') return 'titre';
+  if (hit.kind === 'album') return /[?&]i=\d/.test(hit.url) ? 'titre' : 'album';
+  if (hit.kind === 'artist') return 'artiste';
+  if (hit.kind === 'playlist') return 'playlist';
+  return 'lien court';
+}
+
+/* ---- Une setlist : ses propres liens, et la liste de ses titres pour l'écoute ---- */
+
+// Les liens d'une playlist (sa playlist Spotify, sa playlist Apple Music) : seulement des adresses de PLAYLIST
+// (ou un lien court Spotify), reconstruites ; null s'il n'en reste aucune.
+function normalizePlaylistLinks(raw){
+  const links = normalizeSongLinks(raw);
+  if (!links) return null;
+  const out = {};
+  LISTEN_SERVICES.forEach(({ id }) => {
+    const hit = links[id] ? parseListenCandidate(links[id]) : null;
+    if (hit && isPlaylistHit(hit)) out[id] = hit.url;
+  });
+  return Object.keys(out).length ? out : null;
+}
+// Une adresse de playlist : celle d'une playlist, ou un lien court de partage Spotify (qui peut mener à n'importe quoi : on l'accepte ici, l'utilisateur sait ce qu'il colle)
+function isPlaylistHit(hit){ return hit.kind === 'playlist' || hit.kind === 'short'; }
+
+// Les titres d'une playlist dans l'ordre du set ; pour chaque service : le lien exact enregistré, sinon la recherche.
+// -> [{ song, number, spotify: { exact, kind, url }, apple: { exact, kind, url } }]
+function playlistListenRows(playlist){
+  const rows = [];
+  (playlist && Array.isArray(playlist.songIds) ? playlist.songIds : []).forEach((id) => {
+    const song = Store.getSong(id);
+    if (!song) return;
+    const links = normalizeSongLinks(song.links) || {};
+    const row = { song, number: rows.length + 1 };
+    LISTEN_SERVICES.forEach(({ id: service }) => {
+      const hit = links[service] ? parseListenCandidate(links[service]) : null;
+      row[service] = { exact: !!hit, kind: hit ? hit.kind : '', url: hit ? hit.url : listenSearchUrl(service, song) };
+    });
+    rows.push(row);
+  });
+  return rows;
+}
+
+// Les adresses de titres Spotify enregistrées, dans l'ordre du set (de quoi les coller dans une playlist Spotify)
+function spotifyTrackLinks(rows){
+  return rows.filter(r => r.spotify.exact && r.spotify.kind === 'track').map(r => r.spotify.url);
+}
+
+// « Artiste - Titre », une ligne par titre, dans l'ordre du set : la liste que lit un service de transfert
+function listenTitleList(rows){
+  return rows.map(({ song }) => {
+    const title = listenTidy(song.title), artist = listenTidy(song.artist);
+    return artist ? artist + ' - ' + title : title;
+  }).join('\n');
+}
+
+// Un champ de tableur : entre guillemets quand il le faut ; jamais pris pour une formule (« = + - @ » en tête : titre venu d'un fichier reçu)
+function csvField(value){
+  let s = String(value == null ? '' : value).replace(/[\r\n]+/g, ' ').trim();
+  if (/^[=+\-@]/.test(s)) s = "'" + s;
+  return /[",;]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+}
+
+// Le CSV de la setlist : en-têtes en anglais, comme ceux que lisent les services de transfert de playlists
+function listenCsv(rows, playlistName){
+  const lines = ['Track name,Artist name,Album,Playlist name,Type,ISRC'];
+  rows.forEach(({ song }) => {
+    lines.push([listenTidy(song.title), listenTidy(song.artist), '', playlistName, 'Playlist', ''].map(csvField).join(','));
+  });
+  return lines.join('\r\n') + '\r\n';
 }
 
 /* =========================================================================
@@ -2935,12 +3363,18 @@ const Store = {
     song.bpm = normalizeBpm(song.bpm);
     song.timeSig = normalizeTimeSignature(song.timeSig);
     song.duration = normalizeDuration(song.duration);
+    const links = normalizeSongLinks(song.links);
+    if (links) song.links = links; else delete song.links;
     return song;
   },
 
   normalizeState(){
     this.state.songs.forEach(song => this.normalizeSong(song));
-    this.state.playlists.forEach(p => { if (!Array.isArray(p.songIds)) p.songIds = []; });
+    this.state.playlists.forEach((p) => {
+      if (!Array.isArray(p.songIds)) p.songIds = [];
+      const links = normalizePlaylistLinks(p.links);
+      if (links) p.links = links; else delete p.links;
+    });
   },
 
   // Construit l'état à partir de données lues (stockage local, fichier importé, sauvegarde Drive).
@@ -3000,9 +3434,15 @@ const Store = {
   getSong(id){ return this.state.songs.find(s => s.id === id) || null; },
   getPlaylist(id){ return this.state.playlists.find(p => p.id === id) || null; },
 
-  // Une fiche neuve, pas encore enregistrée (voir createSong et createSongs)
-  makeSong(data){
-    return {
+  // Une fiche neuve, pas encore enregistrée (voir createSong et createSongs).
+  // opts.personal : le fichier vient de l'utilisateur lui-même (EasyZic, sauvegarde) : sa transposition et sa vitesse sont conservées ;
+  // une fiche reçue d'un autre musicien repart des réglages par défaut.
+  makeSong(data, opts){
+    const own = !!(opts && opts.personal);
+    const shift = Math.round(Number(data.transpose));
+    const speed = Math.round(Number(data.scrollSpeed));
+    const links = normalizeSongLinks(data.links);
+    const song = {
       id: uid('song'),
       title: (data.title || 'Sans titre').trim(),
       artist: (data.artist || '').trim(),
@@ -3016,11 +3456,13 @@ const Store = {
       timeSig: normalizeTimeSignature(data.timeSig),
       duration: normalizeDuration(data.duration),
       content: data.content || '',
-      transpose: 0,
-      scrollSpeed: this.state.settings.defaultScrollSpeed,
+      transpose: own && shift >= -12 && shift <= 12 ? shift : 0,
+      scrollSpeed: own && speed >= 1 && speed <= 10 ? speed : this.state.settings.defaultScrollSpeed,
       createdAt: Date.now(),
       updatedAt: Date.now(),
     };
+    if (links) song.links = links;
+    return song;
   },
 
   createSong(data){
@@ -3031,8 +3473,8 @@ const Store = {
   },
 
   // Création groupée : une seule sauvegarde (une playlist reçue peut compter plusieurs dizaines de titres).
-  createSongs(list){
-    const songs = list.map(data => this.makeSong(data));
+  createSongs(list, opts){
+    const songs = list.map(data => this.makeSong(data, opts));
     songs.forEach(song => this.state.songs.push(song));
     if (songs.length) this.save();
     return songs;
@@ -3080,9 +3522,33 @@ const Store = {
   restoreSongFields(snapshot){
     (snapshot || []).forEach(({ id, before }) => {
       const song = this.getSong(id);
-      if (song) Object.assign(song, before);
+      if (!song) return;
+      Object.assign(song, before);
+      Object.keys(before).forEach((k) => { if (before[k] === undefined) delete song[k]; });    // un champ qui n'existait pas disparaît, il ne reste pas « undefined »
     });
     this.save();
+  },
+
+  // Liens d'écoute (Spotify, Apple Music) d'une chanson : { spotify?, apple? } ; vide ou invalide = on les retire.
+  // Renvoie un instantané pour annuler (voir restoreSongLinks), ou null si la chanson n'existe plus.
+  setSongLinks(id, links){
+    const song = this.getSong(id);
+    if (!song) return null;
+    const snap = { id, links: song.links ? Object.assign({}, song.links) : null, updatedAt: song.updatedAt };
+    const clean = normalizeSongLinks(links);
+    if (clean) song.links = clean; else delete song.links;
+    song.updatedAt = Date.now();
+    this.save();
+    return snap;
+  },
+
+  restoreSongLinks(snap){
+    const song = snap && this.getSong(snap.id);
+    if (!song) return false;
+    if (snap.links) song.links = snap.links; else delete song.links;
+    song.updatedAt = snap.updatedAt;
+    this.save();
+    return true;
   },
 
   // Renvoie un instantané qui permet d'annuler la suppression (voir restoreSong).
@@ -3138,6 +3604,11 @@ const Store = {
       const withDuration = drops.find(song => song.duration);
       if (withDuration) patch.duration = withDuration.duration;
     }
+    const links = Object.assign({}, keeper.links);                      // un lien d'écoute manquant est repris d'une autre fiche
+    LISTEN_SERVICES.forEach(({ id }) => {
+      const from = links[id] ? null : drops.find(song => song.links && song.links[id]);
+      if (from){ links[id] = from.links[id]; patch.links = links; }
+    });
     const instruments = new Set(getSongInstruments(keeper));
     drops.forEach(song => getSongInstruments(song).forEach(id => instruments.add(id)));
     patch.instruments = INSTRUMENTS.map(inst => inst.id).filter(id => instruments.has(id));
@@ -3239,9 +3710,32 @@ const Store = {
       updatedAt: Date.now(),
     };
     ['gapSeconds', 'targetMinutes', 'startTime'].forEach((k) => { if (src[k] !== undefined) copy[k] = src[k]; });
+    // (les liens d'écoute de la playlist ne sont pas copiés : la copie est une autre setlist, elle aura ses propres playlists)
     this.state.playlists.splice(this.state.playlists.indexOf(src) + 1, 0, copy);
     this.save();
     return copy;
+  },
+
+  // Liens d'une playlist (sa playlist Spotify, sa playlist Apple Music) : { spotify?, apple? } ; vide ou invalide = on les retire.
+  // Renvoie un instantané pour annuler (voir restorePlaylistLinks), ou null si la playlist n'existe plus.
+  setPlaylistLinks(id, links){
+    const p = this.getPlaylist(id);
+    if (!p) return null;
+    const snap = { id, links: p.links ? Object.assign({}, p.links) : null, updatedAt: p.updatedAt };
+    const clean = normalizePlaylistLinks(links);
+    if (clean) p.links = clean; else delete p.links;
+    p.updatedAt = Date.now();
+    this.save();
+    return snap;
+  },
+
+  restorePlaylistLinks(snap){
+    const p = snap && this.getPlaylist(snap.id);
+    if (!p) return false;
+    if (snap.links) p.links = snap.links; else delete p.links;
+    p.updatedAt = snap.updatedAt;
+    this.save();
+    return true;
   },
 
   // Réglages d'un set : { gap, target, startTime } (seuls les champs présents changent ; vide = valeur par défaut)
@@ -3725,6 +4219,15 @@ const UI = {
     existingId: null,            // chanson déjà présente avec le même titre et le même artiste
     scan: null,                  // lecture de QR code par la caméra, en cours
   },
+  listen: {
+    songId: null,                // chanson dont la fenêtre « Écouter » est ouverte
+    live: null,                  // { title, artist } tapés dans l'éditeur (pas encore enregistrés), utilisés pour la recherche
+    toast: null,                 // dernière notification de la fenêtre : la suivante la remplace (elles s'empileraient sur le champ de collage)
+  },
+  plListen: {
+    id: null,                    // playlist dont la fenêtre « Écouter la setlist » est ouverte
+    toast: null,                 // dernière notification de cette fenêtre
+  },
 };
 
 let wakeLockSentinel = null;
@@ -3798,6 +4301,9 @@ function closeModalEl(modal){
   else if (modal.id === 'modalShareImport') UI.share.incoming = null;
   else if (modal.id === 'modalPlaylistImport'){ PlImport.data = null; PlImport.matches = []; }
   else if (modal.id === 'modalPlaylistShare'){ PlShare.id = null; }
+  else if (modal.id === 'modalListen'){ UI.listen.songId = null; UI.listen.live = null; }
+  else if (modal.id === 'modalPlaylistListen'){ UI.plListen.id = null; }
+  else if (modal.id === 'modalSpotify'){ if (wasOpen && Spotify.step !== 'creating') Spotify.run++; }   // une recherche en cours n'a plus à s'afficher ; une création, elle, va jusqu'au bout (sinon : une playlist vide sur le compte, sans lien)
 }
 function hideAllModals(){
   document.querySelectorAll('.modal-overlay').forEach(closeModalEl);
@@ -3907,6 +4413,7 @@ function renderPlaylistsRail(){
       '<button class="pl-action-btn" data-rename-playlist="' + p.id + '" title="Renommer" aria-label="Renommer">' + ICON.pencil + '</button>' +
       '<button class="pl-action-btn" data-duplicate-playlist="' + p.id + '" title="Dupliquer" aria-label="Dupliquer">' + ICON.copy + '</button>' +
       '<button class="pl-action-btn" data-share-playlist="' + p.id + '" title="Partager (fichier)" aria-label="Partager la playlist">' + ICON.share + '</button>' +
+      '<button class="pl-action-btn' + (normalizePlaylistLinks(p.links) ? ' is-linked' : '') + '" data-listen-playlist="' + p.id + '" title="Écouter (Spotify, Apple Music)" aria-label="Écouter la playlist (Spotify, Apple Music)">' + ICON.headphones + '</button>' +
       '<button class="pl-action-btn danger" data-delete-playlist="' + p.id + '" title="Supprimer" aria-label="Supprimer">' + ICON.trash + '</button>' +
     '</li>'
   )).join('');
@@ -3998,15 +4505,16 @@ function songRowHTML(song, idx, o){
   const openBtn = '<button class="icon-btn subtle" data-open-song="' + id + '" title="Ouvrir au prompteur" aria-label="Ouvrir au prompteur">' + ICON.playsm + '</button>';
   const editBtn = '<button class="icon-btn subtle" data-edit-song="' + id + '" title="Modifier" aria-label="Modifier">' + ICON.pencil + '</button>';
   const shareBtn = '<button class="icon-btn subtle" data-share-song="' + id + '" title="Partager (QR code, lien)" aria-label="Partager (QR code, lien)">' + ICON.qr + '</button>';
+  const listenBtn = '<button class="icon-btn subtle listen-btn' + (songHasListenLinks(song) ? ' is-linked' : '') + '" data-listen-song="' + id + '" title="Écouter (Spotify, Apple Music)" aria-label="Écouter (Spotify, Apple Music)">' + ICON.headphones + '</button>';
   let actions;
   if (o.kind === 'member'){
-    actions = openBtn + editBtn + shareBtn +
+    actions = openBtn + editBtn + shareBtn + listenBtn +
       '<button class="icon-btn subtle" data-remove-from-playlist="' + id + '" title="Retirer de la playlist" aria-label="Retirer de la playlist">' + ICON.close + '</button>';
   } else if (o.kind === 'other'){
-    actions = openBtn + editBtn +
+    actions = openBtn + editBtn + listenBtn +
       '<button class="icon-btn subtle" data-add-here="' + id + '" title="Ajouter à cette playlist" aria-label="Ajouter à cette playlist">' + ICON.plus + '</button>';
   } else {
-    actions = openBtn + editBtn + shareBtn +
+    actions = openBtn + editBtn + shareBtn + listenBtn +
       '<button class="icon-btn subtle" data-add-to-playlist="' + id + '" title="Ajouter à une playlist" aria-label="Ajouter à une playlist">' + ICON.plus + '</button>' +
       '<button class="icon-btn subtle danger" data-delete-song="' + id + '" title="Supprimer" aria-label="Supprimer">' + ICON.trash + '</button>';
   }
@@ -4242,6 +4750,8 @@ document.getElementById('playlistList').addEventListener('click', (e) => {
   if (duplicateBtn){ duplicatePlaylistFlow(duplicateBtn.dataset.duplicatePlaylist); return; }
   const shareBtn = e.target.closest('[data-share-playlist]');
   if (shareBtn){ openPlaylistShare(shareBtn.dataset.sharePlaylist); return; }
+  const listenBtn = e.target.closest('[data-listen-playlist]');
+  if (listenBtn){ openPlaylistListen(listenBtn.dataset.listenPlaylist); return; }
   const deleteBtn = e.target.closest('[data-delete-playlist]');
   if (deleteBtn){
     const id = deleteBtn.dataset.deletePlaylist;
@@ -4507,6 +5017,7 @@ document.addEventListener('keydown', (e) => {
 const SONG_MENU_ACTIONS = [
   { attr: 'data-edit-song',            label: 'Modifier la chanson' },
   { attr: 'data-share-song',           label: 'Partager (QR code, lien)…' },
+  { attr: 'data-listen-song',          label: 'Écouter (Spotify, Apple Music)…' },
   { attr: 'data-move-song',            label: 'Déplacer à une position…' },
   { attr: 'data-add-to-playlist',      label: 'Ajouter à une playlist…' },
   { attr: 'data-add-here',             label: 'Ajouter à cette playlist' },
@@ -4719,6 +5230,7 @@ function openEditor(songId, returnTo){
   document.getElementById('editorHeading').textContent = song ? 'Modifier la chanson' : 'Nouvelle chanson';
   document.getElementById('btnDeleteSong').hidden = !song;
   document.getElementById('btnDuplicateSong').hidden = !song;
+  document.getElementById('btnEditorListen').hidden = !song;
   document.getElementById('inputTitle').value = song ? song.title : '';
   document.getElementById('inputArtist').value = song ? song.artist : '';
   document.getElementById('inputStyle').value = song ? (song.style || '') : '';
@@ -4966,6 +5478,7 @@ function duplicateSong(id){
     duration: song.duration,
     instruments: getSongInstruments(song),
     content: song.content,
+    links: song.links,
   });
   Store.updateSong(copy.id, {
     transpose: song.transpose || 0,
@@ -4980,6 +5493,1081 @@ function duplicateSong(id){
 document.getElementById('btnDuplicateSong').addEventListener('click', () => {
   if (UI.editingSongId) duplicateSong(UI.editingSongId);
 });
+
+/* =========================================================================
+   ÉCOUTER UNE CHANSON : liens Spotify et Apple Music
+   =========================================================================
+   Chaque service a une ligne : un lien ordinaire (balise a, nouvel onglet, aucun script) qui ouvre soit le lien exact enregistré avec la
+   chanson, soit la recherche « Titre Artiste ». Sous les lignes, un champ où coller l'adresse d'un titre pour l'enregistrer. */
+
+// Ce que la fenêtre affiche et cherche : les champs de l'éditeur (même pas encore enregistrés) ou la chanson elle-même
+function listenSubject(song){
+  return UI.listen.live ? { title: UI.listen.live.title || song.title, artist: UI.listen.live.artist } : song;
+}
+
+function renderListenModal(){
+  const song = UI.listen.songId ? Store.getSong(UI.listen.songId) : null;
+  if (!song){ closeModalEl(document.getElementById('modalListen')); return; }
+  const subject = listenSubject(song);
+  const query = listenQuery(subject);
+  document.getElementById('listenSubtitle').textContent = [subject.title, subject.artist].filter(Boolean).join(' · ');
+  const links = normalizeSongLinks(song.links) || {};
+  document.getElementById('listenList').innerHTML = LISTEN_SERVICES.map((svc) => {
+    const exact = links[svc.id] || '';
+    const href = exact || listenSearchUrl(svc.id, subject);
+    const note = exact ? 'Votre lien enregistré (' + listenKindLabel(parseListenCandidate(exact)) + ')' : 'Recherche : « ' + query + ' »';
+    return '<li class="listen-row' + (exact ? ' is-exact' : '') + '" data-service="' + svc.id + '">' +
+      '<span class="listen-badge" aria-hidden="true">' + ICON.musicnote + '</span>' +
+      '<div class="listen-info"><span class="listen-name">' + escapeHTML(svc.name) + '</span><span class="listen-note">' + escapeHTML(note) + '</span></div>' +
+      '<div class="listen-actions">' +
+        '<a class="btn btn-sm ' + (exact ? 'btn-accent' : 'btn-ghost') + '" href="' + escapeHTML(href) + '" target="_blank" rel="noopener noreferrer" data-listen-open="' + svc.id + '" aria-label="' + (exact ? 'Ouvrir le lien enregistré sur ' : 'Rechercher sur ') + escapeHTML(svc.name) + '">' + (exact ? 'Ouvrir' : 'Rechercher') + '</a>' +
+        (exact ? '<button type="button" class="icon-btn subtle" data-listen-remove="' + svc.id + '" title="Retirer le lien enregistré" aria-label="Retirer le lien ' + escapeHTML(svc.name) + ' enregistré">' + ICON.close + '</button>' : '') +
+      '</div>' +
+    '</li>';
+  }).join('');
+  updateListenPasteHint();
+}
+
+function openListenModal(songId, live){
+  const song = Store.getSong(songId);
+  if (!song) return;
+  hideAllModals();                                                   // refermer une ancienne fenêtre « Écouter » remet UI.listen à zéro : on la remplit après
+  UI.listen.songId = songId;
+  UI.listen.live = live && (live.title || live.artist) ? { title: live.title || '', artist: live.artist || '' } : null;
+  document.getElementById('listenPasteInput').value = '';
+  renderListenModal();
+  document.getElementById('modalListen').hidden = false;
+}
+
+// Ce que contient le champ de collage : rien, une adresse reconnue (ou deux), ou un texte sans adresse utilisable
+function updateListenPasteHint(){
+  const text = document.getElementById('listenPasteInput').value;
+  const found = text.trim() ? findListenLinks(text) : {};
+  const names = LISTEN_SERVICES.filter(s => found[s.id]).map(s => s.name + ' (' + listenKindLabel(found[s.id]) + ')');
+  const hint = document.getElementById('listenPasteHint');
+  const bad = !!text.trim() && !names.length;
+  document.getElementById('btnListenSave').disabled = !names.length;
+  hint.classList.toggle('is-error', bad);
+  hint.textContent = !text.trim()
+    ? 'Dans Spotify ou Apple Music : Partager → Copier le lien, puis collez-le ici. Le bouton ouvrira alors directement ce titre.'
+    : names.length
+      ? 'Reconnu : ' + names.join(' et ') + '.'
+      : 'Aucune adresse Spotify ou Apple Music reconnue dans ce texte (open.spotify.com…, music.apple.com…).';
+}
+
+function listenToast(message, action){
+  if (UI.listen.toast && UI.listen.toast.isConnected) UI.listen.toast.remove();
+  UI.listen.toast = toast(message, false, action);
+}
+
+function refreshAfterListenChange(){
+  if (!document.getElementById('modalListen').hidden) renderListenModal();
+  if (UI.view === 'library') renderLibrary();
+}
+
+function saveListenLinks(){
+  const song = UI.listen.songId ? Store.getSong(UI.listen.songId) : null;
+  if (!song) return;
+  const input = document.getElementById('listenPasteInput');
+  const found = findListenLinks(input.value);
+  const services = LISTEN_SERVICES.filter(s => found[s.id]);
+  if (!services.length){ updateListenPasteHint(); return; }
+  const changed = services.filter(s => !song.links || song.links[s.id] !== found[s.id].url);
+  input.value = '';
+  if (!changed.length){
+    renderListenModal();
+    listenToast(services.length > 1 ? 'Ces liens sont déjà enregistrés.' : 'Ce lien est déjà enregistré.');
+    return;
+  }
+  const next = Object.assign({}, song.links);
+  changed.forEach((s) => { next[s.id] = found[s.id].url; });
+  const snap = Store.setSongLinks(song.id, next);
+  refreshAfterListenChange();
+  listenToast('Lien ' + changed.map(s => s.name).join(' et ') + ' enregistré.', snap && {
+    label: 'Annuler',
+    onClick: () => { Store.restoreSongLinks(snap); refreshAfterListenChange(); },
+  });
+}
+
+function removeListenLink(serviceId){
+  const song = UI.listen.songId ? Store.getSong(UI.listen.songId) : null;
+  const svc = LISTEN_SERVICES.find(s => s.id === serviceId);
+  if (!song || !svc || !(song.links && song.links[serviceId])) return;
+  const next = Object.assign({}, song.links);
+  delete next[serviceId];
+  const snap = Store.setSongLinks(song.id, next);
+  refreshAfterListenChange();
+  listenToast('Lien ' + svc.name + ' retiré.', snap && {
+    label: 'Annuler',
+    onClick: () => { Store.restoreSongLinks(snap); refreshAfterListenChange(); },
+  });
+}
+
+document.addEventListener('click', (e) => {
+  const btn = e.target.closest ? e.target.closest('[data-listen-song]') : null;
+  if (btn) openListenModal(btn.dataset.listenSong);
+});
+document.getElementById('btnEditorListen').addEventListener('click', () => {
+  if (!UI.editingSongId) return;
+  openListenModal(UI.editingSongId, {
+    title: document.getElementById('inputTitle').value.trim(),
+    artist: document.getElementById('inputArtist').value.trim(),
+  });
+});
+document.getElementById('btnCloseListen').addEventListener('click', () => closeModalEl(document.getElementById('modalListen')));
+document.getElementById('listenList').addEventListener('click', (e) => {
+  const remove = e.target.closest('[data-listen-remove]');
+  if (remove) removeListenLink(remove.dataset.listenRemove);
+});
+document.getElementById('listenPasteInput').addEventListener('input', updateListenPasteHint);
+// Un collage reconnu s'enregistre tout seul (un geste de moins) ; « Annuler » le retire
+document.getElementById('listenPasteInput').addEventListener('paste', () => {
+  setTimeout(() => {
+    if (Object.keys(findListenLinks(document.getElementById('listenPasteInput').value)).length) saveListenLinks();
+  }, 0);
+});
+document.getElementById('listenPasteInput').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter'){ e.preventDefault(); saveListenLinks(); }
+});
+document.getElementById('btnListenSave').addEventListener('click', saveListenLinks);
+
+/* =========================================================================
+   ÉCOUTER LA SETLIST : une playlist Spotify, une playlist Apple Music
+   =========================================================================
+   Ce que l'appli peut faire sans compte ni clé (elle ne se connecte à aucun service) :
+   - ouvrir chaque titre dans Spotify / Apple Music (lien exact enregistré avec la chanson, sinon recherche) ;
+   - copier les liens Spotify de la setlist, que l'appli Spotify (ordinateur) accepte en collage dans une playlist ;
+   - copier la liste « Artiste - Titre » ou télécharger un CSV, que lisent les services de transfert de playlists
+     (c'est le chemin pour Apple Music : Apple ne laisse créer une playlist qu'à un développeur qui a un compte payant) ;
+   - garder, avec la setlist, l'adresse de sa playlist Spotify / Apple Music (elle voyage avec le fichier de la playlist).
+   La création directe d'une playlist Spotify, qui exige un compte développeur, est dans la fenêtre suivante (option avancée). */
+
+const LISTEN_PL_ACTIONS = {
+  'spotify-copy': 'copySpotifyLinks',
+  'apple-copy': 'copyTitleList',
+  'apple-csv': 'downloadListenCsv',
+};
+
+async function copyTextToClipboard(text){
+  try {
+    if (navigator.clipboard && navigator.clipboard.writeText){ await navigator.clipboard.writeText(text); return true; }
+  } catch (e) { /* repli ci-dessous */ }
+  try {
+    const area = document.createElement('textarea');
+    area.value = text;
+    area.setAttribute('readonly', '');
+    area.style.cssText = 'position:fixed;top:0;left:0;opacity:0;';
+    document.body.appendChild(area);
+    area.focus();
+    area.select();
+    area.setSelectionRange(0, text.length);
+    const done = !!document.execCommand('copy');
+    area.remove();
+    return done;
+  } catch (e) { return false; }
+}
+
+function plListenToast(message, isDanger, action){
+  if (UI.plListen.toast && UI.plListen.toast.isConnected) UI.plListen.toast.remove();
+  UI.plListen.toast = toast(message, !!isDanger, action);
+}
+
+function openPlaylistListen(playlistId){
+  const playlist = Store.getPlaylist(playlistId);
+  if (!playlist) return;
+  if (!playlist.songIds.some(id => !!Store.getSong(id))){ toast('Cette playlist est vide : il n\'y a rien à écouter.'); return; }
+  hideAllModals();                                                   // refermer une ancienne fenêtre remet UI.plListen à zéro : on la remplit après
+  UI.plListen.id = playlistId;
+  document.getElementById('plListenPasteInput').value = '';
+  document.getElementById('plListenTracksBox').open = false;
+  renderPlaylistListen();
+  document.getElementById('modalPlaylistListen').hidden = false;
+}
+
+function listenAnchor(url, className, label, text){
+  return '<a class="' + className + '" href="' + escapeHTML(url) + '" target="_blank" rel="noopener noreferrer" aria-label="' + escapeHTML(label) + '">' + escapeHTML(text) + '</a>';
+}
+
+function renderPlaylistListen(){
+  const playlist = UI.plListen.id ? Store.getPlaylist(UI.plListen.id) : null;
+  if (!playlist){ closeModalEl(document.getElementById('modalPlaylistListen')); return; }
+  const rows = playlistListenRows(playlist);
+  const timing = timingOfSongs(rows.map(r => r.song), playlistOptions(playlist).gap);
+  document.getElementById('plListenSubtitle').textContent = '« ' + playlist.name + ' » · ' + countLabel(rows.length, 'titre') + ' · ' + setTotalText(timing);
+  const links = normalizePlaylistLinks(playlist.links) || {};
+  const spotifyLinks = spotifyTrackLinks(rows);
+  const exactCount = (service) => rows.filter(r => r[service].exact).length;
+  const savedLine = (service) => links[service]
+    ? '<p class="pll-saved"><span>Playlist de cette setlist :</span>' +
+        listenAnchor(links[service], '', 'Ouvrir la playlist ' + LISTEN_SERVICES.find(s => s.id === service).name, 'Ouvrir') +
+        '<button type="button" class="icon-btn subtle" data-pll-remove="' + service + '" title="Retirer ce lien" aria-label="Retirer le lien de la playlist ' + LISTEN_SERVICES.find(s => s.id === service).name + '">' + ICON.close + '</button></p>'
+    : '';
+  const head = (service, name) =>
+    '<div class="pll-card-head"><span class="listen-badge" aria-hidden="true">' + ICON.musicnote + '</span><h4>' + name + '</h4>' +
+    '<span class="pll-count">' + exactCount(service) + ' sur ' + rows.length + ' avec lien exact</span></div>';
+
+  document.getElementById('plListenCards').innerHTML =
+    '<section class="pll-card' + (links.spotify ? ' is-linked' : '') + '" data-service="spotify">' +
+      head('spotify', 'Spotify') +
+      savedLine('spotify') +
+      '<div class="pll-actions">' +
+        '<button type="button" class="btn btn-accent" data-pll="spotify-create">Créer la playlist sur Spotify…</button>' +
+        '<button type="button" class="btn" data-pll="spotify-copy"' + (spotifyLinks.length ? '' : ' disabled') + '>' +
+          (spotifyLinks.length ? 'Copier ' + countLabel(spotifyLinks.length, 'lien') : 'Aucun lien de titre à copier') + '</button>' +
+      '</div>' +
+      '<p class="hint">« Créer » ajoute la playlist directement dans votre compte (option avancée : elle demande une appli Spotify à votre nom). Sinon, copiez les liens, puis dans l\'appli Spotify sur ordinateur : ouvrez une playlist, cliquez dans la liste des titres et collez (Ctrl+V ou ⌘V). Ce raccourci de Spotify marche le plus souvent, mais il lui est déjà arrivé de cesser de fonctionner.</p>' +
+    '</section>' +
+    '<section class="pll-card' + (links.apple ? ' is-linked' : '') + '" data-service="apple">' +
+      head('apple', 'Apple Music') +
+      savedLine('apple') +
+      '<div class="pll-actions">' +
+        '<button type="button" class="btn btn-accent" data-pll="apple-copy">Copier la liste « Artiste - Titre »</button>' +
+        '<button type="button" class="btn" data-pll="apple-csv">Télécharger en CSV</button>' +
+      '</div>' +
+      '<p class="hint">Apple ne laisse pas une appli créer une playlist sans un compte développeur payant. Le chemin le plus simple : un service de transfert de playlists (TuneMyMusic, Soundiiz…). Vous y importez cette liste ou ce fichier, vous choisissez Apple Music comme destination, et il crée la playlist. Vérifiez ensuite que chaque titre est le bon : la reconnaissance se fait sur le titre et l\'artiste.</p>' +
+    '</section>';
+
+  const label = (service, name, row) => (row[service].exact ? 'Ouvrir sur ' : 'Chercher sur ') + name + ' : ' + row.song.title;
+  document.getElementById('plListenTracksSummary').textContent = 'Les ' + countLabel(rows.length, 'titre') + ', un par un';
+  document.getElementById('plListenTracks').innerHTML = rows.map(row =>
+    '<li><span class="pll-num">' + row.number + '</span>' +
+      '<span class="pll-song">' + escapeHTML(listenTidy(row.song.title)) + (row.song.artist ? ' <i>' + escapeHTML(row.song.artist) + '</i>' : '') + '</span>' +
+      '<span class="pll-links">' +
+        listenAnchor(row.spotify.url, 'pll-chip' + (row.spotify.exact ? ' is-exact' : ''), label('spotify', 'Spotify', row), 'Spotify') +
+        listenAnchor(row.apple.url, 'pll-chip' + (row.apple.exact ? ' is-exact' : ''), label('apple', 'Apple Music', row), 'Apple Music') +
+      '</span></li>'
+  ).join('');
+  updatePlaylistPasteHint();
+}
+
+// Ce que contient le champ de collage : rien, une playlist reconnue (ou deux), ou un texte sans adresse de playlist
+function playlistPasteHits(text){
+  const filled = !!text.trim();
+  return { found: filled ? findListenLinks(text) : {}, hits: filled ? findListenLinks(text, isPlaylistHit) : {} };
+}
+
+function updatePlaylistPasteHint(){
+  const text = document.getElementById('plListenPasteInput').value;
+  const { found, hits } = playlistPasteHits(text);
+  const names = LISTEN_SERVICES.filter(s => hits[s.id]).map(s => s.name + ' (' + listenKindLabel(hits[s.id]) + ')');
+  const hint = document.getElementById('plListenPasteHint');
+  const notPlaylist = !names.length && Object.keys(found).length > 0;
+  const bad = !!text.trim() && !names.length;
+  document.getElementById('btnPlListenSave').disabled = !names.length;
+  hint.classList.toggle('is-error', bad);
+  hint.textContent = !text.trim()
+    ? 'Une fois la playlist créée (sur Spotify, ou via un service de transfert pour Apple Music) : Partager → Copier le lien, puis collez-le ici. Elle restera attachée à cette setlist.'
+    : names.length
+      ? 'Reconnu : ' + names.join(' et ') + '.'
+      : notPlaylist
+        ? 'Ce lien n\'est pas celui d\'une playlist (titre, album ou artiste). Il faut le lien de la playlist entière.'
+        : 'Aucune adresse de playlist Spotify ou Apple Music reconnue dans ce texte.';
+}
+
+function refreshAfterPlaylistListenChange(){
+  if (!document.getElementById('modalPlaylistListen').hidden) renderPlaylistListen();
+  renderPlaylistsRail();
+}
+
+function savePlaylistLinks(){
+  const playlist = UI.plListen.id ? Store.getPlaylist(UI.plListen.id) : null;
+  if (!playlist) return;
+  const input = document.getElementById('plListenPasteInput');
+  const { hits } = playlistPasteHits(input.value);
+  const services = LISTEN_SERVICES.filter(s => hits[s.id]);
+  if (!services.length){ updatePlaylistPasteHint(); return; }
+  const changed = services.filter(s => !playlist.links || playlist.links[s.id] !== hits[s.id].url);
+  input.value = '';
+  if (!changed.length){
+    renderPlaylistListen();
+    plListenToast(services.length > 1 ? 'Ces liens sont déjà enregistrés.' : 'Ce lien est déjà enregistré.');
+    return;
+  }
+  const next = Object.assign({}, playlist.links);
+  changed.forEach((s) => { next[s.id] = hits[s.id].url; });
+  const snap = Store.setPlaylistLinks(playlist.id, next);
+  refreshAfterPlaylistListenChange();
+  plListenToast('Playlist ' + changed.map(s => s.name).join(' et ') + ' enregistrée.', false, snap && {
+    label: 'Annuler',
+    onClick: () => { Store.restorePlaylistLinks(snap); refreshAfterPlaylistListenChange(); },
+  });
+}
+
+function removePlaylistLink(serviceId){
+  const playlist = UI.plListen.id ? Store.getPlaylist(UI.plListen.id) : null;
+  const svc = LISTEN_SERVICES.find(s => s.id === serviceId);
+  if (!playlist || !svc || !(playlist.links && playlist.links[serviceId])) return;
+  const next = Object.assign({}, playlist.links);
+  delete next[serviceId];
+  const snap = Store.setPlaylistLinks(playlist.id, next);
+  refreshAfterPlaylistListenChange();
+  plListenToast('Lien de la playlist ' + svc.name + ' retiré.', false, snap && {
+    label: 'Annuler',
+    onClick: () => { Store.restorePlaylistLinks(snap); refreshAfterPlaylistListenChange(); },
+  });
+}
+
+async function copySpotifyLinks(){
+  const rows = playlistListenRows(Store.getPlaylist(UI.plListen.id));
+  const links = spotifyTrackLinks(rows);
+  if (!links.length) return;
+  const done = await copyTextToClipboard(links.join('\n'));
+  const missing = rows.length - links.length;
+  plListenToast(done
+    ? countLabel(links.length, 'lien Spotify copié', 'liens Spotify copiés') + (missing ? ' (' + countLabel(missing, 'titre n\'a', 'titres n\'ont') + ' pas de lien exact : ' + (missing > 1 ? 'ils ne sont' : 'il n\'est') + ' pas dans la liste).' : '.')
+    : 'Copie automatique impossible sur cet appareil.', !done);
+}
+
+async function copyTitleList(){
+  const rows = playlistListenRows(Store.getPlaylist(UI.plListen.id));
+  if (!rows.length) return;
+  const done = await copyTextToClipboard(listenTitleList(rows));
+  plListenToast(done ? 'Liste copiée : ' + countLabel(rows.length, 'titre') + ', un par ligne (« Artiste - Titre »).' : 'Copie automatique impossible : utilisez « Télécharger en CSV ».', !done);
+}
+
+function downloadListenCsv(){
+  const playlist = Store.getPlaylist(UI.plListen.id);
+  const rows = playlistListenRows(playlist);
+  if (!playlist || !rows.length) return;
+  const name = safeFileBase(playlist.name) + '.csv';
+  downloadTextFile(name, listenCsv(rows, playlist.name), 'text/csv;charset=utf-8');
+  plListenToast('Fichier « ' + name + ' » téléchargé : importez-le dans un service de transfert de playlists.');
+}
+
+document.getElementById('plListenCards').addEventListener('click', (e) => {
+  const remove = e.target.closest('[data-pll-remove]');
+  if (remove){ removePlaylistLink(remove.dataset.pllRemove); return; }
+  const btn = e.target.closest('[data-pll]');
+  if (!btn || btn.disabled) return;
+  if (btn.dataset.pll === 'spotify-create'){ openSpotifyCreate(UI.plListen.id); return; }
+  const fn = LISTEN_PL_ACTIONS[btn.dataset.pll];
+  if (fn) window[fn]();
+});
+document.getElementById('btnClosePlListen').addEventListener('click', () => closeModalEl(document.getElementById('modalPlaylistListen')));
+document.getElementById('plListenPasteInput').addEventListener('input', updatePlaylistPasteHint);
+document.getElementById('plListenPasteInput').addEventListener('paste', () => {
+  setTimeout(() => {
+    if (Object.keys(playlistPasteHits(document.getElementById('plListenPasteInput').value).hits).length) savePlaylistLinks();
+  }, 0);
+});
+document.getElementById('plListenPasteInput').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter'){ e.preventDefault(); savePlaylistLinks(); }
+});
+document.getElementById('btnPlListenSave').addEventListener('click', savePlaylistLinks);
+
+/* =========================================================================
+   SPOTIFY : CRÉER LA PLAYLIST D'UNE SETLIST (option avancée)
+   =========================================================================
+   Spotify ne laisse une appli écrire dans un compte qu'avec une « appli développeur » : l'utilisateur crée la sienne (gratuit,
+   mais son propriétaire doit avoir un abonnement Premium) et colle son Client ID dans MusicApp. La connexion suit la procédure
+   « Authorization Code avec PKCE » : aucun secret dans l'appli, aucun mot de passe vu par elle ; les jetons restent dans le
+   stockage local de l'appareil, jamais dans les sauvegardes, les partages ni Google Drive.
+   Rien ne part vers Spotify avant un geste de l'utilisateur. Chaque titre est cherché (sauf s'il a déjà son lien exact) et
+   l'utilisateur valide les correspondances AVANT toute création.
+   Limites : Spotify change souvent ces règles (2026 : propriétaire Premium, 5 utilisateurs par appli, recherche limitée à 10 résultats,
+   « POST /me/playlists » et « POST /playlists/{id}/items »). Le code suit leur documentation de février 2026 ; il n'a pu être essayé que
+   contre une simulation de Spotify. En cas de refus, les autres chemins de la fenêtre « Écouter la setlist » restent disponibles. */
+
+const SPOTIFY = {
+  authUrl: 'https://accounts.spotify.com/authorize',
+  tokenUrl: 'https://accounts.spotify.com/api/token',
+  apiUrl: 'https://api.spotify.com/v1',
+  scope: 'playlist-modify-private playlist-modify-public',
+  tokenKey: 'setlist_spotify_v1',            // jetons de connexion : jamais dans la sauvegarde
+  pendingKey: 'setlist_spotify_auth_v1',     // connexion commencée, en attente du retour de Spotify
+  pendingMaxAge: 15 * 60 * 1000,
+  searchLimit: 10,                           // le maximum accepté par la recherche de Spotify depuis février 2026
+  addChunk: 100,                             // titres ajoutés par demande (le maximum de Spotify)
+  maxRetries: 3,
+  maxWaitMs: 20000,
+  searchWorkers: 3,
+  timeoutMs: 30000,                          // au-delà, l'appel est abandonné (erreur « réseau »)
+};
+
+class SpotifyError extends Error {
+  constructor(kind, status, detail){
+    super(kind);
+    this.kind = kind;                        // network | login | denied | refused | state | forbidden | ratelimit | server | notfound | bad | setup | crypto | storage
+    this.status = status || 0;
+    this.detail = detail || '';
+  }
+}
+
+const SPOTIFY_ERRORS = {
+  network: 'Pas de connexion à Spotify. Vérifiez votre réseau, puis réessayez.',
+  login: 'La connexion à Spotify a expiré ou a été refusée. Reconnectez-vous.',
+  denied: 'Vous avez refusé l\'accès sur la page de Spotify : rien n\'a été fait. Vous pouvez recommencer quand vous voulez.',
+  refused: 'Spotify a refusé la connexion. Vérifiez que l\'adresse de redirection et le Client ID sont bien ceux de votre appli Spotify.',
+  state: 'Le retour de Spotify n\'a pas pu être vérifié (connexion trop ancienne ou interrompue). Recommencez la connexion.',
+  forbidden: 'Spotify refuse cette opération (erreur 403). Vérifiez dans le tableau de bord de votre appli Spotify que votre compte figure dans « User management » et que le propriétaire de l\'appli a un abonnement Premium actif, puis déconnectez-vous et reconnectez-vous.',
+  ratelimit: 'Spotify limite le nombre de demandes pour le moment. Patientez une minute, puis réessayez.',
+  server: 'Spotify rencontre un problème de son côté. Réessayez dans quelques minutes.',
+  notfound: 'Spotify ne trouve pas ce qui était demandé.',
+  bad: 'Spotify a refusé la demande.',
+  setup: 'Il manque la configuration de la connexion (voir « Configuration »).',
+  crypto: 'Ce navigateur ne permet pas la connexion sécurisée à Spotify (fonctions de chiffrement absentes). Utilisez un navigateur à jour, avec une adresse en https.',
+  storage: 'Le stockage de l\'appareil est inaccessible : la connexion à Spotify ne peut pas être préparée.',
+};
+
+const Spotify = {
+  playlistId: null,
+  step: 'setup',             // setup | connect | search | review | creating | done | error
+  run: 0,                    // numéro de l'opération en cours : une réponse qui arrive après une fermeture ou une annulation est ignorée
+  rows: [],                  // une ligne par titre de la setlist (voir spotifyBuildRows)
+  name: '',                  // nom de la playlist à créer
+  saveLinks: true,           // enregistrer dans les chansons les liens exacts trouvés
+  progress: { done: 0, total: 0 },
+  error: null,               // { kind, status, detail }
+  retry: null,               // ce que fait « Réessayer »
+  result: null,              // { id, url, name, total, added, pending }
+  clientHint: '',            // remarque sous le champ du Client ID
+};
+
+const spotifyClientId = () => Store.state.settings.spotifyClientId || '';
+function spotifyWait(ms){ return new Promise(resolve => setTimeout(resolve, ms)); }      // (remplacée dans les tests : pas d'attente réelle)
+
+// L'adresse où Spotify renvoie l'utilisateur après sa connexion : celle de la page, sans « ?… » ni « #… ».
+// Spotify n'accepte que https (ou une adresse de boucle locale http://127.0.0.1) : ailleurs, la connexion est impossible.
+function spotifyRedirectUri(){
+  try {
+    const u = new URL(location.href);
+    const loopback = u.protocol === 'http:' && (u.hostname === '127.0.0.1' || u.hostname === '[::1]');
+    if (u.protocol === 'https:' || loopback) return u.origin + u.pathname;
+  } catch (e) { /* adresse illisible : pas de connexion possible */ }
+  return '';
+}
+
+/* ---------------------------------------------------------------------- jetons (stockage local, hors sauvegarde) */
+
+function spotifyRead(key){
+  try { const raw = localStorage.getItem(key); return raw ? JSON.parse(raw) : null; } catch (e) { return null; }
+}
+function spotifyWrite(key, value){
+  try { localStorage.setItem(key, JSON.stringify(value)); return true; } catch (e) { return false; }
+}
+function spotifyRemove(key){
+  try { localStorage.removeItem(key); } catch (e) { /* sans importance */ }
+}
+
+// Les jetons de la connexion en cours, s'ils sont ceux du Client ID actuel et encore utilisables (ou renouvelables)
+function spotifyTokens(){
+  const t = spotifyRead(SPOTIFY.tokenKey);
+  const clientId = spotifyClientId();
+  if (!t || typeof t !== 'object' || !clientId || t.clientId !== clientId) return null;
+  if (typeof t.access !== 'string' || !t.access) return null;
+  if (!(Number(t.expiresAt) > Date.now()) && !t.refresh) return null;
+  return t;
+}
+const spotifyConnected = () => !!spotifyTokens();
+function spotifyDisconnect(){ spotifyRemove(SPOTIFY.tokenKey); }
+
+/* ---------------------------------------------------------------------- connexion (Authorization Code + PKCE) */
+
+function spotifyRandom(bytes){
+  const a = new Uint8Array(bytes);
+  crypto.getRandomValues(a);
+  return b64urlEncode(a);
+}
+async function spotifyChallenge(verifier){
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(verifier));
+  return b64urlEncode(new Uint8Array(digest));
+}
+function spotifyNavigate(url){ location.assign(url); }            // (remplacé dans les tests)
+
+async function spotifyBeginLogin(playlistId){
+  const clientId = spotifyClientId();
+  const redirect = spotifyRedirectUri();
+  if (!clientId || !redirect) throw new SpotifyError('setup');
+  if (!(window.crypto && crypto.subtle && crypto.getRandomValues)) throw new SpotifyError('crypto');
+  const verifier = spotifyRandom(64), state = spotifyRandom(16);
+  const challenge = await spotifyChallenge(verifier);
+  if (!spotifyWrite(SPOTIFY.pendingKey, { state, verifier, clientId, redirect, playlistId, at: Date.now() })) throw new SpotifyError('storage');
+  const params = new URLSearchParams({
+    client_id: clientId, response_type: 'code', redirect_uri: redirect, scope: SPOTIFY.scope,
+    state, code_challenge_method: 'S256', code_challenge: challenge,
+  });
+  spotifyNavigate(SPOTIFY.authUrl + '?' + params.toString());
+}
+
+// Un appel réseau avec un délai maximal : une connexion qui ne répond plus ne doit pas bloquer la fenêtre indéfiniment
+async function spotifyFetch(url, init){
+  const ctl = typeof AbortController === 'function' ? new AbortController() : null;
+  const timer = ctl ? setTimeout(() => ctl.abort(), SPOTIFY.timeoutMs) : 0;
+  try {
+    return await fetch(url, ctl ? Object.assign({}, init, { signal: ctl.signal }) : init);
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+// Échange un code (ou un jeton de renouvellement) contre des jetons -> { v, clientId, access, refresh, expiresAt }
+async function spotifyTokenRequest(fields, clientId){
+  let res;
+  try {
+    res = await spotifyFetch(SPOTIFY.tokenUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams(fields).toString(),
+    });
+  } catch (e) { throw new SpotifyError('network'); }
+  let data = null;
+  try { data = await res.json(); } catch (e) { data = null; }
+  if (!res.ok || !data || typeof data.access_token !== 'string' || !data.access_token){
+    const detail = data && typeof data.error_description === 'string' ? data.error_description : (data && typeof data.error === 'string' ? data.error : '');
+    throw new SpotifyError(res.status === 400 || res.status === 401 ? 'login' : (res.status >= 500 ? 'server' : 'bad'), res.status, detail);
+  }
+  return {
+    v: 1, clientId,
+    access: data.access_token,
+    refresh: typeof data.refresh_token === 'string' && data.refresh_token ? data.refresh_token : (fields.grant_type === 'refresh_token' ? fields.refresh_token : ''),
+    expiresAt: Date.now() + Math.max(60, Number(data.expires_in) || 3600) * 1000,
+  };
+}
+
+// Au retour de Spotify (?code=…&state=… ou ?error=…) : l'adresse est nettoyée AVANT tout (le code ne doit pas rester dans l'historique),
+// l'état est vérifié, puis le code est échangé contre des jetons.
+// -> null (ce n'est pas un retour de Spotify) | { playlistId, ok: true } | { playlistId, error, detail }
+async function spotifyHandleReturn(){
+  let params;
+  try { params = new URLSearchParams(location.search); } catch (e) { return null; }
+  const state = params.get('state');
+  if (!state || !(params.has('code') || params.has('error'))) return null;
+  const pending = spotifyRead(SPOTIFY.pendingKey);
+  spotifyRemove(SPOTIFY.pendingKey);
+  try { history.replaceState(null, '', location.pathname + location.hash); } catch (e) { /* sans importance */ }
+  if (!pending || typeof pending !== 'object' || pending.state !== state || !(Date.now() - Number(pending.at) < SPOTIFY.pendingMaxAge)) return { playlistId: null, error: 'state' };
+  const playlistId = typeof pending.playlistId === 'string' ? pending.playlistId : null;
+  if (params.get('error')) return { playlistId, error: params.get('error') === 'access_denied' ? 'denied' : 'refused' };
+  const code = params.get('code');
+  if (!code || pending.redirect !== spotifyRedirectUri()) return { playlistId, error: 'refused' };
+  try {
+    const tokens = await spotifyTokenRequest({
+      grant_type: 'authorization_code', code, redirect_uri: pending.redirect, client_id: pending.clientId, code_verifier: pending.verifier,
+    }, pending.clientId);
+    if (!spotifyWrite(SPOTIFY.tokenKey, tokens)) return { playlistId, error: 'storage' };
+    return { playlistId, ok: true };
+  } catch (e) {
+    return { playlistId, error: e instanceof SpotifyError ? (e.kind === 'login' ? 'refused' : e.kind) : 'network', detail: e instanceof SpotifyError ? e.detail : '' };
+  }
+}
+
+let spotifyRefreshing = null;                                       // un seul renouvellement à la fois
+async function spotifyAccessToken(forceRefresh){
+  const t = spotifyTokens();
+  if (!t) throw new SpotifyError('login');
+  if (!forceRefresh && Number(t.expiresAt) - Date.now() > 60000) return t.access;
+  if (!t.refresh) throw new SpotifyError('login');
+  if (!spotifyRefreshing){
+    spotifyRefreshing = spotifyTokenRequest({ grant_type: 'refresh_token', refresh_token: t.refresh, client_id: t.clientId }, t.clientId)
+      .then((next) => { spotifyWrite(SPOTIFY.tokenKey, next); return next; })
+      .finally(() => { spotifyRefreshing = null; });
+  }
+  try {
+    return (await spotifyRefreshing).access;
+  } catch (e) {
+    if (e instanceof SpotifyError && e.kind === 'login'){ spotifyDisconnect(); }   // le renouvellement est refusé : il faut se reconnecter
+    throw e;
+  }
+}
+
+/* ---------------------------------------------------------------------- appels à l'API */
+
+// Un appel à l'API Spotify : jeton ajouté, un renouvellement si le jeton est refusé, patience quand Spotify demande d'attendre (429).
+async function spotifyApi(method, path, opts){
+  const o = opts || {};
+  const url = SPOTIFY.apiUrl + path + (o.query ? '?' + new URLSearchParams(o.query).toString() : '');
+  let refreshed = false;
+  for (let attempt = 0; attempt <= SPOTIFY.maxRetries; attempt++){
+    const token = await spotifyAccessToken(false);
+    let res;
+    try {
+      res = await spotifyFetch(url, {
+        method,
+        headers: Object.assign({ Authorization: 'Bearer ' + token }, o.body ? { 'Content-Type': 'application/json' } : {}),
+        body: o.body ? JSON.stringify(o.body) : undefined,
+      });
+    } catch (e) { throw new SpotifyError('network'); }
+    if (res.status === 401 && !refreshed){
+      refreshed = true;
+      await spotifyAccessToken(true);                               // jeton refusé : un renouvellement, puis on réessaie
+      continue;
+    }
+    if (res.status === 429 && attempt < SPOTIFY.maxRetries){
+      const asked = Number(res.headers && res.headers.get ? res.headers.get('Retry-After') : 0);
+      await spotifyWait(Math.min(SPOTIFY.maxWaitMs, (asked > 0 ? asked : Math.pow(2, attempt)) * 1000));
+      continue;
+    }
+    if (res.status >= 500 && attempt < 1){ await spotifyWait(800); continue; }
+    let data = null;
+    if (res.status !== 204){ try { data = await res.json(); } catch (e) { data = null; } }
+    if (res.ok) return data;
+    const detail = data && data.error ? (typeof data.error === 'string' ? data.error : String(data.error.message || '')) : '';
+    const kind = res.status === 401 ? 'login' : res.status === 403 ? 'forbidden' : res.status === 404 ? 'notfound'
+      : res.status === 429 ? 'ratelimit' : res.status >= 500 ? 'server' : 'bad';
+    throw new SpotifyError(kind, res.status, detail);
+  }
+  throw new SpotifyError('bad');                                    // (inatteignable : la dernière tentative répond toujours)
+}
+
+/* ---------------------------------------------------------------------- chercher et choisir les titres */
+
+// Un résultat de recherche, ramené à ce qui sert : l'identifiant est vérifié et l'adresse reconstruite (rien n'est repris tel quel)
+function spotifyCandidate(item){
+  if (!item || typeof item !== 'object' || typeof item.id !== 'string' || !/^[A-Za-z0-9]{16,32}$/.test(item.id)) return null;
+  return {
+    id: item.id,
+    uri: 'spotify:track:' + item.id,
+    url: 'https://open.spotify.com/track/' + item.id,
+    name: clipText(item.name, 200).trim() || '(sans titre)',
+    artists: Array.isArray(item.artists) ? item.artists.map(a => clipText(a && a.name, 120).trim()).filter(Boolean).slice(0, 6) : [],
+    album: clipText(item.album && item.album.name, 200).trim(),
+  };
+}
+
+// Pour comparer deux titres : sans accents, majuscules, parenthèses (« Live », « Remastered »…) ni ponctuation
+function spotifyComparable(s){
+  return String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+    .replace(/\([^)]*\)|\[[^\]]*\]/g, ' ')
+    .replace(/\s[-–]\s(?:remaster(?:ed)?|live|mono|stereo|radio edit|single|acoustic|bonus)\b.*$/, ' ')
+    .replace(/&/g, ' and ')
+    .replace(/[^a-z0-9]+/g, ' ').trim();
+}
+
+const SPOTIFY_NOISE = /\b(karaoke|tribute|instrumental|made famous|originally performed|backing track|cover)\b/;
+
+// Plus le score est haut, plus le résultat ressemble à la chanson demandée (titre, puis artiste ; les reprises et karaokés sont écartés)
+function spotifyScore(song, cand){
+  const want = spotifyComparable(listenTidy(song.title)), got = spotifyComparable(cand.name);
+  if (!want || !got) return -10;
+  let score = 0;
+  if (got === want) score += 6;
+  else if (got.startsWith(want + ' ') || want.startsWith(got + ' ')) score += 3;
+  else if (got.includes(want) || want.includes(got)) score += 1.5;
+  else score -= 4;
+  const artist = spotifyComparable(song.artist);
+  if (artist){
+    const names = cand.artists.map(spotifyComparable);
+    if (names.some(n => n === artist)) score += 4;
+    else if (names.some(n => n && (n.includes(artist) || artist.includes(n)))) score += 2;
+    else score -= 3;
+  }
+  const full = (cand.name + ' ' + cand.album + ' ' + cand.artists.join(' ')).toLowerCase();
+  if (SPOTIFY_NOISE.test(full) && !SPOTIFY_NOISE.test(String(song.title || '').toLowerCase())) score -= 5;
+  return score;
+}
+// Un résultat est « sûr » quand le titre est identique et l'artiste (s'il est connu) aussi, ou presque
+const spotifySure = (song, score) => score >= (spotifyComparable(song.artist) ? 8 : 6);
+
+function spotifyRank(song, candidates){
+  return candidates.map(c => Object.assign({}, c, { score: spotifyScore(song, c) })).sort((a, b) => b.score - a.score);
+}
+
+async function spotifySearch(song, isCurrent){
+  const clean = (s) => listenTidy(s).replace(/["\\]/g, ' ').replace(/\s+/g, ' ').trim();
+  const title = clean(song.title), artist = clean(song.artist);
+  const queries = [];
+  if (title) queries.push('track:"' + title + '"' + (artist ? ' artist:"' + artist + '"' : ''));
+  const loose = listenQuery(song);
+  if (loose) queries.push(loose);
+  const seen = new Set(), found = [];
+  for (const q of queries){
+    if (isCurrent && !isCurrent()) break;                            // recherche annulée : pas de requête de plus
+    const data = await spotifyApi('GET', '/search', { query: { q, type: 'track', limit: String(SPOTIFY.searchLimit) } });
+    const items = data && data.tracks && Array.isArray(data.tracks.items) ? data.tracks.items : [];
+    items.forEach((item) => {
+      const c = spotifyCandidate(item);
+      if (c && !seen.has(c.id)){ seen.add(c.id); found.push(c); }
+    });
+    if (found.length) break;                                         // la recherche précise suffit quand elle répond
+  }
+  return found;
+}
+
+// Une ligne par titre de la setlist : un lien Spotify de titre déjà enregistré dispense de chercher
+function spotifyBuildRows(playlist){
+  return playlistListenRows(playlist).map((r) => {
+    const id = r.spotify.exact && r.spotify.kind === 'track' ? (/\/track\/([A-Za-z0-9]+)$/.exec(r.spotify.url) || [])[1] : '';
+    return {
+      song: r.song,
+      link: id ? { uri: 'spotify:track:' + id, url: r.spotify.url } : null,
+      candidates: [], pick: -1, checked: !!id, status: id ? 'link' : 'pending', error: false,
+    };
+  });
+}
+
+function spotifyChooseDefaults(){
+  Spotify.rows.forEach((row) => {
+    if (row.link) return;
+    if (!row.candidates.length){ row.status = row.error ? 'error' : 'none'; row.pick = -1; row.checked = false; return; }
+    row.pick = 0;
+    row.checked = true;
+    row.status = spotifySure(row.song, row.candidates[0].score) ? 'ok' : 'check';
+  });
+}
+
+const spotifyRowUri = (row) => row.link ? row.link.uri : (row.candidates[row.pick] ? row.candidates[row.pick].uri : '');
+const spotifyRowIncluded = (row) => row.checked && !!spotifyRowUri(row);
+
+function updateSpotifyProgress(){
+  const bar = document.getElementById('spProgress'), text = document.getElementById('spProgressText');
+  if (bar){ bar.max = Math.max(1, Spotify.progress.total); bar.value = Spotify.progress.done; }
+  if (text) text.textContent = (Spotify.step === 'creating' ? 'Ajout des titres à la playlist… ' : 'Recherche des titres sur Spotify… ') + Spotify.progress.done + ' / ' + Spotify.progress.total;
+}
+
+function spotifyErrorText(error){
+  const kind = SPOTIFY_ERRORS[error.kind] ? error.kind : 'bad';
+  const tech = error.status ? ' (erreur ' + error.status + (error.detail ? ' : ' + error.detail : '') + ')' : (error.detail ? ' (' + error.detail + ')' : '');
+  return SPOTIFY_ERRORS[kind] + tech;
+}
+
+function spotifyFail(e, retry){
+  const err = e instanceof SpotifyError ? e : new SpotifyError('bad', 0, String(e && e.message || ''));
+  Spotify.error = { kind: err.kind, status: err.status, detail: err.detail };
+  Spotify.retry = retry || null;
+  Spotify.step = 'error';
+  renderSpotify();
+  if (document.getElementById('modalSpotify').hidden) toast(spotifyErrorText(Spotify.error), true);     // fenêtre fermée entre-temps : l'échec ne doit pas passer inaperçu
+}
+
+async function spotifySearchAll(){
+  const run = ++Spotify.run;
+  const rows = Spotify.rows;
+  const queue = rows.map((r, i) => i).filter(i => !rows[i].link);
+  Spotify.progress = { done: 0, total: queue.length };
+  if (!queue.length){ spotifyChooseDefaults(); Spotify.step = 'review'; renderSpotify(); return; }   // tous les titres ont déjà leur lien exact
+  Spotify.step = 'search';
+  renderSpotify();
+  let next = 0, failure = null;
+  const worker = async () => {
+    while (!failure && run === Spotify.run && next < queue.length){
+      const i = queue[next++];
+      try {
+        rows[i].candidates = spotifyRank(rows[i].song, await spotifySearch(rows[i].song, () => run === Spotify.run));
+      } catch (e) {
+        if (!(e instanceof SpotifyError) || (e.kind !== 'bad' && e.kind !== 'notfound')){ failure = e; return; }
+        rows[i].error = true;                                        // un titre dont la recherche est refusée n'arrête pas les autres
+        rows[i].candidates = [];
+      }
+      if (run !== Spotify.run) return;
+      Spotify.progress.done++;
+      updateSpotifyProgress();
+    }
+  };
+  await Promise.all(Array.from({ length: SPOTIFY.searchWorkers }, worker));
+  if (run !== Spotify.run) return;
+  if (failure){ spotifyFail(failure, spotifySearchAll); return; }
+  spotifyChooseDefaults();
+  Spotify.step = 'review';
+  renderSpotify();
+}
+
+/* ---------------------------------------------------------------------- créer la playlist */
+
+async function spotifyCreate(){
+  const playlist = Spotify.playlistId ? Store.getPlaylist(Spotify.playlistId) : null;
+  if (!playlist) return;
+  const chosen = Spotify.rows.filter(spotifyRowIncluded);
+  if (!chosen.length) return;
+  const name = String(Spotify.name || '').trim().slice(0, 100) || playlist.name;
+  const uris = chosen.map(spotifyRowUri);
+  const run = ++Spotify.run;
+  Spotify.progress = { done: 0, total: uris.length };
+  Spotify.step = 'creating';
+  renderSpotify();
+  let created;
+  try {
+    created = await spotifyApi('POST', '/me/playlists', {
+      body: { name, description: ('Setlist « ' + playlist.name + ' » : ' + countLabel(uris.length, 'titre') + ', dans l\'ordre du set. Créée avec MusicApp.').slice(0, 300), public: false },
+    });
+  } catch (e) {
+    if (run === Spotify.run) spotifyFail(e, spotifyCreate);
+    return;
+  }
+  if (run !== Spotify.run) return;
+  const id = created && typeof created.id === 'string' && /^[A-Za-z0-9]{16,32}$/.test(created.id) ? created.id : '';
+  if (!id){ spotifyFail(new SpotifyError('bad', 0, 'réponse inattendue de Spotify'), spotifyCreate); return; }
+  Spotify.result = { id, url: 'https://open.spotify.com/playlist/' + id, name, total: uris.length, added: 0, pending: uris.slice() };
+  Store.setPlaylistLinks(playlist.id, Object.assign({}, playlist.links, { spotify: Spotify.result.url }));    // la playlist existe : on la retient, même si l'ajout échoue ensuite
+  await spotifyAddPending(run);
+}
+
+async function spotifyAddPending(run){
+  const res = Spotify.result;
+  try {
+    while (res.pending.length){
+      const chunk = res.pending.slice(0, SPOTIFY.addChunk);
+      await spotifyApi('POST', '/playlists/' + res.id + '/items', { body: { uris: chunk } });
+      if (run !== Spotify.run) return;
+      res.pending.splice(0, chunk.length);
+      res.added += chunk.length;
+      Spotify.progress.done = res.added;
+      updateSpotifyProgress();
+    }
+  } catch (e) {
+    if (run === Spotify.run) spotifyFail(e, () => { Spotify.step = 'creating'; renderSpotify(); return spotifyAddPending(++Spotify.run); });
+    return;
+  }
+  spotifyFinish();
+}
+
+// Fin heureuse : les liens exacts trouvés sont enregistrés dans les chansons (si la case est cochée), puis le résumé
+function spotifyFinish(){
+  if (Spotify.saveLinks){
+    const patches = [];
+    Spotify.rows.forEach((row) => {
+      if (row.link || !spotifyRowIncluded(row)) return;
+      const song = Store.getSong(row.song.id);
+      if (!song) return;
+      patches.push({ id: song.id, data: { links: Object.assign({}, song.links, { spotify: row.candidates[row.pick].url }) } });
+    });
+    if (patches.length) Store.updateSongs(patches);
+  }
+  Spotify.step = 'done';
+  renderSpotify();
+  refreshAfterPlaylistListenChange();                                // le lien de la playlist, dans la fenêtre « Écouter » si elle est ouverte, et dans le rail
+  if (UI.view === 'library') renderLibrary();
+  if (document.getElementById('modalSpotify').hidden && Spotify.result) toast('Playlist Spotify « ' + Spotify.result.name + ' » créée : ' + countLabel(Spotify.result.added, 'titre') + '.');
+}
+
+/* ---------------------------------------------------------------------- la fenêtre */
+
+function openSpotifyCreate(playlistId, opts){
+  const playlist = Store.getPlaylist(playlistId);
+  if (!playlist) return;
+  const o = opts || {};
+  if (Spotify.step === 'creating'){                                  // une création est en cours (fenêtre fermée entre-temps) : on la retrouve, on n'en lance pas une seconde
+    if (Spotify.playlistId !== playlistId){ toast('Une playlist Spotify est déjà en cours de création : patientez quelques secondes.'); return; }
+    hideAllModals();
+    renderSpotify();
+    document.getElementById('modalSpotify').hidden = false;
+    return;
+  }
+  hideAllModals();
+  Spotify.run++;
+  Object.assign(Spotify, { playlistId, rows: [], name: playlist.name, saveLinks: true, progress: { done: 0, total: 0 }, error: null, retry: null, result: null, clientHint: '' });
+  if (o.error){
+    Spotify.error = { kind: o.error, status: 0, detail: o.detail || '' };
+    Spotify.step = 'error';
+  } else if (!spotifyClientId() || !spotifyRedirectUri()){
+    Spotify.step = 'setup';
+  } else if (!spotifyConnected()){
+    Spotify.step = 'connect';
+  } else {
+    Spotify.rows = spotifyBuildRows(playlist);
+    Spotify.step = 'search';
+  }
+  renderSpotify();
+  document.getElementById('modalSpotify').hidden = false;
+  if (Spotify.step === 'search') spotifySearchAll();
+}
+
+// Fermer : on revient à la fenêtre « Écouter la setlist » de la même playlist
+function closeSpotifyFlow(){
+  const id = Spotify.playlistId;
+  closeModalEl(document.getElementById('modalSpotify'));
+  if (id && Store.getPlaylist(id)) openPlaylistListen(id);
+}
+
+function spotifySummary(rows){
+  const count = (s) => rows.filter(r => r.status === s).length;
+  const bits = [];
+  if (count('link')) bits.push(countLabel(count('link'), 'lien enregistré', 'liens enregistrés'));
+  if (count('ok')) bits.push(countLabel(count('ok'), 'trouvé', 'trouvés'));
+  if (count('check')) bits.push(countLabel(count('check'), 'à vérifier', 'à vérifier'));
+  const missing = count('none') + count('error');
+  if (missing) bits.push(countLabel(missing, 'introuvable', 'introuvables'));
+  return countLabel(rows.length, 'titre') + (bits.length ? ' : ' + bits.join(' · ') : '');
+}
+
+const SPOTIFY_BADGE = { link: 'Lien enregistré', ok: 'Trouvé', check: 'À vérifier', none: 'Introuvable', error: 'Erreur' };
+const SPOTIFY_ROW_CLASS = { link: 'is-link', ok: 'is-ok', check: 'is-check', none: 'is-none', error: 'is-error' };
+
+function spotifyRowHTML(row, i){
+  const title = escapeHTML(listenTidy(row.song.title));
+  let detail = '';
+  if (row.link){
+    detail = '<span class="sp-detail">Votre lien Spotify enregistré : pas de recherche.</span>';
+  } else if (!row.candidates.length){
+    detail = '<span class="sp-detail">' + (row.error ? 'La recherche a été refusée. ' : 'Aucun résultat sur Spotify. ') +
+      listenAnchor(listenSearchUrl('spotify', row.song), 'sp-link', 'Chercher « ' + listenTidy(row.song.title) + ' » à la main sur Spotify', 'Chercher à la main') + '</span>';
+  } else {
+    detail = '<select class="pli-action sp-pick" data-sp-pick aria-label="Version Spotify de « ' + title + ' »"' + (row.checked ? '' : ' disabled') + '>' +
+      row.candidates.map((c, k) => '<option value="' + k + '"' + (k === row.pick ? ' selected' : '') + '>' +
+        escapeHTML(c.name + ' — ' + (c.artists.join(', ') || 'artiste inconnu') + (c.album ? ' · ' + c.album : '')) + '</option>').join('') + '</select>';
+  }
+  const usable = row.link || row.candidates.length;
+  return '<li class="pli-row sp-row ' + SPOTIFY_ROW_CLASS[row.status] + (row.checked ? '' : ' is-off') + '" data-i="' + i + '">' +
+    '<label class="sec-check"><input type="checkbox" data-sp-check' + (row.checked ? ' checked' : '') + (usable ? '' : ' disabled') + ' aria-label="Ajouter « ' + title + ' »"></label>' +
+    '<span class="pli-num">' + (i + 1) + '</span>' +
+    '<span class="pli-main"><span class="pli-title">' + title + '</span>' + (row.song.artist ? '<span class="pli-artist">' + escapeHTML(row.song.artist) + '</span>' : '') + '</span>' +
+    '<span class="pli-badge">' + SPOTIFY_BADGE[row.status] + '</span>' + detail +
+  '</li>';
+}
+
+function spotifyReviewCounts(){
+  const n = Spotify.rows.filter(spotifyRowIncluded).length;
+  const btn = document.getElementById('btnSpCreate');
+  if (btn){ btn.disabled = n === 0; btn.textContent = n ? 'Créer la playlist (' + countLabel(n, 'titre') + ')' : 'Aucun titre à ajouter'; }
+}
+
+function spotifyStepHTML(playlist){
+  const step = Spotify.step;
+  if (step === 'setup'){
+    const redirect = spotifyRedirectUri();
+    return (redirect ? '' : '<p class="sp-warn">Cette fonction demande que MusicApp soit ouverte depuis son adresse en https:// (par exemple sur GitHub Pages). Elle ne marche ni depuis un fichier ouvert sur l\'appareil, ni depuis « localhost » (Spotify refuse cette adresse : pour un essai local, utilisez http://127.0.0.1).</p>') +
+      '<p class="sp-lead">Spotify ne laisse une appli écrire dans un compte qu\'avec une « appli développeur » à votre nom. Elle se crée gratuitement, mais son propriétaire doit avoir un abonnement <b>Spotify Premium</b> actif (règle de Spotify depuis 2026).</p>' +
+      '<ol class="sp-steps">' +
+        '<li>Ouvrez <a href="https://developer.spotify.com/dashboard" target="_blank" rel="noopener noreferrer">developer.spotify.com/dashboard</a>, connectez-vous, puis choisissez « Create app ».</li>' +
+        '<li>Dans « Redirect URIs », ajoutez exactement cette adresse :' +
+          '<div class="sp-redirect"><input type="text" id="spRedirect" readonly value="' + escapeHTML(redirect) + '" aria-label="Adresse de redirection à déclarer" spellcheck="false"><button type="button" class="btn btn-ghost btn-sm" data-sp="copy-redirect"' + (redirect ? '' : ' disabled') + '>Copier</button></div></li>' +
+        '<li>Cochez « Web API », acceptez les conditions, puis enregistrez.</li>' +
+        '<li>Ouvrez les « Settings » de cette appli, copiez son « Client ID » et collez-le ici :</li>' +
+      '</ol>' +
+      (spotifyConnected() ? '<p class="hint sp-connected">Cet appareil est connecté à Spotify. <button type="button" class="btn btn-ghost btn-sm" data-sp="disconnect">Se déconnecter</button></p>' : '') +
+      '<label class="seg-label" for="spClientIdInput">Client ID</label>' +
+      '<div class="share-link-row"><input type="text" id="spClientIdInput" value="' + escapeHTML(spotifyClientId()) + '" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="64" aria-describedby="spClientHint">' +
+        '<button type="button" class="btn btn-accent btn-sm" data-sp="save-client">Enregistrer</button></div>' +
+      '<p class="hint' + (Spotify.clientHint ? ' is-error' : '') + '" id="spClientHint">' + escapeHTML(Spotify.clientHint || 'Une suite de lettres et de chiffres (32 en général).') + '</p>' +
+      '<p class="hint">Le Client ID n\'est pas un secret. Aucun mot de passe Spotify ne passe par MusicApp : la connexion se fait sur la page de Spotify, et les jetons restent sur cet appareil (jamais dans les sauvegardes ni dans les partages).</p>';
+  }
+  if (step === 'connect'){
+    return '<p class="sp-lead">Connectez MusicApp à votre compte Spotify : une page de Spotify s\'ouvre, vous acceptez la demande (créer et modifier vos playlists), puis vous revenez ici.</p>' +
+      '<div class="modal-actions is-wrap"><button type="button" class="btn btn-ghost" data-sp="setup">Configuration</button><button type="button" class="btn btn-accent" data-sp="login">Se connecter à Spotify</button></div>';
+  }
+  if (step === 'search' || step === 'creating'){
+    return '<p class="sp-lead" id="spProgressText" aria-live="polite"></p><progress class="sp-bar" id="spProgress" max="1" value="0"></progress>' +
+      (step === 'creating' ? '<p class="hint">Vous pouvez fermer cette fenêtre : la playlist se termine en arrière-plan.</p>' : '') +
+      '<div class="modal-actions"><button type="button" class="btn btn-ghost" data-sp="' + (step === 'search' ? 'cancel' : 'close') + '">' + (step === 'search' ? 'Annuler' : 'Fermer') + '</button></div>';
+  }
+  if (step === 'review'){
+    return '<label class="plimport-name"><span class="seg-label">Nom de la playlist</span><input type="text" id="spName" maxlength="100" autocomplete="off" spellcheck="false" value="' + escapeHTML(Spotify.name) + '"></label>' +
+      '<p class="hint plimport-summary">' + escapeHTML(spotifySummary(Spotify.rows)) + '</p>' +
+      '<p class="hint sp-note">Vérifiez la version choisie pour chaque titre : la recherche se fait sur le titre et l\'artiste. Décochez ce que vous ne voulez pas.</p>' +
+      '<ol class="pli-list sp-rows" id="spRows">' + Spotify.rows.map(spotifyRowHTML).join('') + '</ol>' +
+      '<label class="plimport-check sp-save"><input type="checkbox" id="spSaveLinks"' + (Spotify.saveLinks ? ' checked' : '') + '><span>Enregistrer les liens trouvés dans les chansons</span></label>' +
+      '<div class="modal-actions plimport-actions"><button type="button" class="btn btn-ghost" data-sp="close">Annuler</button><button type="button" class="btn btn-accent" id="btnSpCreate" data-sp="create">Créer la playlist</button></div>';
+  }
+  if (step === 'done'){
+    const r = Spotify.result;
+    const skipped = Spotify.rows.filter(row => !spotifyRowIncluded(row)).map(row => listenTidy(row.song.title));
+    return '<p class="sp-lead">La playlist « ' + escapeHTML(r.name) + ' » est créée sur votre compte Spotify : ' + escapeHTML(countLabel(r.added, 'titre')) + ', dans l\'ordre du set.</p>' +
+      (skipped.length ? '<p class="hint">Non ajoutés : ' + escapeHTML(skipped.join(', ')) + '.</p>' : '') +
+      '<p class="hint">Son adresse est gardée avec la setlist : le bouton « Ouvrir » de la fenêtre « Écouter la setlist » y mène.</p>' +
+      '<div class="modal-actions is-wrap"><button type="button" class="btn btn-ghost" data-sp="close">Fermer</button>' +
+        '<a class="btn btn-accent" href="' + escapeHTML(r.url) + '" target="_blank" rel="noopener noreferrer" data-sp-open>Ouvrir sur Spotify</a></div>';
+  }
+  // error
+  const e = Spotify.error || { kind: 'bad', status: 0, detail: '' };
+  const kind = SPOTIFY_ERRORS[e.kind] ? e.kind : 'bad';
+  const partial = Spotify.result && Spotify.result.pending && Spotify.result.pending.length
+    ? '<p class="hint">La playlist a été créée, mais tous les titres n\'y sont pas encore (' + escapeHTML(String(Spotify.result.added)) + ' sur ' + escapeHTML(String(Spotify.result.total)) + '). « Réessayer » ajoute le reste.</p>' : '';
+  const buttons = ['<button type="button" class="btn btn-ghost" data-sp="close">Fermer</button>'];
+  if (kind === 'forbidden' || kind === 'refused' || kind === 'setup') buttons.push('<button type="button" class="btn btn-ghost" data-sp="setup">Configuration</button>');
+  if (kind === 'login' || kind === 'state' || kind === 'denied' || kind === 'refused' || kind === 'forbidden') buttons.push('<button type="button" class="btn btn-accent" data-sp="login">Se reconnecter</button>');
+  else if (Spotify.retry) buttons.push('<button type="button" class="btn btn-accent" data-sp="retry">Réessayer</button>');
+  return '<p class="sp-warn" role="alert">' + escapeHTML(spotifyErrorText(e)) + '</p>' + partial + '<div class="modal-actions is-wrap">' + buttons.join('') + '</div>';
+}
+
+function renderSpotify(){
+  const playlist = Spotify.playlistId ? Store.getPlaylist(Spotify.playlistId) : null;
+  if (!playlist){ closeModalEl(document.getElementById('modalSpotify')); return; }
+  document.getElementById('spSubtitle').textContent = '« ' + playlist.name + ' » · ' + countLabel(Spotify.rows.length || playlist.songIds.filter(id => !!Store.getSong(id)).length, 'titre');
+  const body = document.getElementById('spBody');
+  body.dataset.step = Spotify.step;
+  body.innerHTML = spotifyStepHTML(playlist);
+  if (Spotify.step === 'search' || Spotify.step === 'creating') updateSpotifyProgress();
+  if (Spotify.step === 'review') spotifyReviewCounts();
+}
+
+function spotifySaveClientId(){
+  const input = document.getElementById('spClientIdInput');
+  const value = input ? input.value.trim() : '';
+  if (!/^[A-Za-z0-9]{16,64}$/.test(value)){
+    Spotify.clientHint = 'Ce n\'est pas un Client ID : il s\'écrit avec des lettres et des chiffres seulement (32 caractères en général), sans espace.';
+    renderSpotify();
+    const field = document.getElementById('spClientIdInput');
+    if (field){ field.value = value; field.focus(); }
+    return;
+  }
+  Store.state.settings.spotifyClientId = value;
+  Store.save();
+  Spotify.clientHint = '';
+  if (!spotifyRedirectUri()){ renderSpotify(); return; }
+  Spotify.step = 'connect';
+  renderSpotify();
+}
+
+function spotifyLogin(){
+  Promise.resolve().then(() => spotifyBeginLogin(Spotify.playlistId)).catch((e) => spotifyFail(e, null));
+}
+
+const SPOTIFY_ACTIONS = {
+  setup(){ Spotify.step = 'setup'; Spotify.clientHint = ''; renderSpotify(); },
+  'save-client': spotifySaveClientId,
+  'copy-redirect': async () => {
+    const done = await copyTextToClipboard(spotifyRedirectUri());
+    toast(done ? 'Adresse copiée.' : 'Copie automatique impossible : sélectionnez l\'adresse et copiez-la à la main.', !done);
+  },
+  login: spotifyLogin,
+  disconnect(){ spotifyDisconnect(); toast('Déconnecté de Spotify : les jetons de connexion sont effacés de cet appareil.'); renderSpotify(); },
+  cancel(){ Spotify.run++; closeSpotifyFlow(); },
+  close(){ closeSpotifyFlow(); },
+  create: spotifyCreate,
+  retry(){ const fn = Spotify.retry; if (fn) fn(); },
+};
+
+document.getElementById('spBody').addEventListener('click', (e) => {
+  const btn = e.target.closest('[data-sp]');
+  if (!btn || btn.disabled) return;
+  const fn = SPOTIFY_ACTIONS[btn.dataset.sp];
+  if (fn) fn();
+});
+document.getElementById('spBody').addEventListener('change', (e) => {
+  const li = e.target.closest('.sp-row');
+  const row = li ? Spotify.rows[Number(li.dataset.i)] : null;
+  if (row && e.target.matches('[data-sp-check]')){
+    row.checked = e.target.checked;
+    li.classList.toggle('is-off', !row.checked);
+    const pick = li.querySelector('[data-sp-pick]');
+    if (pick) pick.disabled = !row.checked;
+    spotifyReviewCounts();
+  } else if (row && e.target.matches('[data-sp-pick]')){
+    const k = Number(e.target.value);
+    if (row.candidates[k]){
+      row.pick = k;
+      row.status = spotifySure(row.song, row.candidates[k].score) ? 'ok' : 'check';
+      li.classList.remove(SPOTIFY_ROW_CLASS.ok, SPOTIFY_ROW_CLASS.check);
+      li.classList.add(SPOTIFY_ROW_CLASS[row.status]);
+      li.querySelector('.pli-badge').textContent = SPOTIFY_BADGE[row.status];
+    }
+  } else if (e.target.id === 'spSaveLinks'){
+    Spotify.saveLinks = e.target.checked;
+  }
+});
+document.getElementById('spBody').addEventListener('input', (e) => {
+  if (e.target.id === 'spName') Spotify.name = e.target.value;
+});
+document.getElementById('spBody').addEventListener('keydown', (e) => {
+  if (e.key !== 'Enter') return;
+  if (e.target.id === 'spClientIdInput'){ e.preventDefault(); spotifySaveClientId(); }
+  else if (e.target.id === 'spName'){ e.preventDefault(); }
+});
+document.getElementById('btnCloseSpotify').addEventListener('click', closeSpotifyFlow);
+
+// Au démarrage : retour de la page de connexion de Spotify ? Alors on termine la connexion et on reprend là où l'utilisateur en était.
+async function spotifyResumeAfterLogin(){
+  const res = await spotifyHandleReturn();
+  if (!res) return;
+  const playlist = res.playlistId ? Store.getPlaylist(res.playlistId) : null;
+  if (!playlist){
+    toast(res.ok ? 'Connecté à Spotify.' : SPOTIFY_ERRORS[res.error] || SPOTIFY_ERRORS.bad, !res.ok);
+    return;
+  }
+  UI.currentPlaylistId = playlist.id;
+  renderLibrary();
+  if (res.ok) toast('Connecté à Spotify.');
+  openSpotifyCreate(playlist.id, res.ok ? {} : { error: res.error, detail: res.detail });
+}
 
 /* =========================================================================
    BIBLIOTHÈQUE D'ACCORDS : analyse du symbole, doigtés de guitare, clavier de piano
@@ -6753,45 +8341,23 @@ function handleImportedText(filename, rawText){
     return false;
   }
 
+  // Un export EasyZic, une sauvegarde complète : l'écran d'import laisse choisir les chansons à intégrer ou à remplacer
   if (isEasyZicFormat(parsed)){
-    const count = Object.keys(parsed.items).length;
-    const defaultName = (filename || 'Import EasyZic').replace(/\.ezp$/i, '').replace(/[_-]+/g, ' ').trim() || 'Import EasyZic';
-    showPrompt(
-      'Importer depuis EasyZic',
-      count + ' chanson' + (count > 1 ? 's' : '') + ' trouvée' + (count > 1 ? 's' : '') + ' dans ce fichier. Elles seront ajoutées (vos chansons actuelles sont conservées) dans une nouvelle playlist. Nom de la playlist :',
-      defaultName,
-      (playlistName) => {
-        const result = importEasyZicData(parsed, playlistName);
-        UI.currentPlaylistId = null;
-        document.getElementById('modalSettings').hidden = true;
-        renderLibrary();
-        showView('library');
-        toast(result.songCount + ' chansons importées dans « ' + result.playlistName + ' ».');
-      }
-    );
+    const review = reviewFromEasyZic(parsed, filename);
+    if (review.error){ toast(review.error, true); return false; }
+    openImportReview(review);
     return true;
   }
 
   if (parsed && Array.isArray(parsed.songs) && Array.isArray(parsed.playlists)){
-    showConfirm('Importer les données', 'Ceci remplacera toutes vos chansons et playlists actuelles par le contenu du fichier. Continuer ?', () => {
-      Store.adopt(parsed);
-      Store.save();
-      UI.currentPlaylistId = null;
-      document.getElementById('modalSettings').hidden = true;
-      showView('library');
-      toast('Données importées.');
-    });
+    if (libraryIsUntouched()){ replaceLibraryWith(parsed); return true; }      // rien à comparer ni à protéger : restauration directe
+    const review = reviewFromBackup(parsed);
+    if (review.error){ toast(review.error, true); return false; }
+    openImportReview(review);
     return true;
   }
 
-  if (!parsed && looksLikeChordPro(filename, rawText)){
-    const song = importChordProFile(filename, rawText);
-    document.getElementById('modalSettings').hidden = true;
-    renderLibrary();
-    showView('library');
-    toast('« ' + song.title + ' » importée.');
-    return true;
-  }
+  if (!parsed && looksLikeChordPro(filename, rawText)) return importChordProText(filename, rawText);
 
   toast('Format de fichier non reconnu.', true);
   return false;
@@ -7135,12 +8701,14 @@ async function pipeBytes(bytes, stream, limit){
   return out;
 }
 
-// Fiche -> texte court : titre, artiste, style, chanteurs, instruments, tonalité, tempo, mesure, paroles et accords.
+// Fiche -> texte court : titre, artiste, style, chanteurs, instruments, tonalité, tempo, mesure, paroles et accords, liens d'écoute.
 // (La transposition personnelle n'est pas partagée : chacun règle son capo.)
 async function encodeSharedSong(song){
+  const links = normalizeSongLinks(song.links);
   const o = {
     v: 1, t: song.title, a: song.artist, s: song.style, g: song.singers, i: song.instruments, k: song.originalKey,
     b: song.bpm, m: song.timeSig === DEFAULT_TIME_SIGNATURE ? '' : song.timeSig, d: song.duration, c: song.content,
+    l: links ? { s: links.spotify, a: links.apple } : undefined,
   };
   const json = JSON.stringify(o, (key, v) => (v === '' || v === null || v === undefined || v === 0 || (Array.isArray(v) && !v.length)) ? undefined : v);
   const raw = utf8Bytes(json);
@@ -7162,7 +8730,8 @@ function clipText(v, n){
 function sanitizeSharedSong(o){
   if (!o || typeof o !== 'object' || o.v !== 1 || typeof o.c !== 'string') return null;
   const clip = clipText;
-  return {
+  const links = normalizeSongLinks(o.l && typeof o.l === 'object' ? { spotify: o.l.s, apple: o.l.a } : null);
+  const song = {
     title: clip(o.t, 200).trim() || 'Chanson partagée',
     artist: clip(o.a, 200).trim(),
     style: clip(o.s, 100).trim(),
@@ -7174,6 +8743,8 @@ function sanitizeSharedSong(o){
     duration: normalizeDuration(o.d),
     content: clip(o.c, 100000),
   };
+  if (links) song.links = links;
+  return song;
 }
 
 function findShareToken(text){
@@ -7375,7 +8946,9 @@ document.getElementById('btnShareImportReplace').addEventListener('click', () =>
   const target = incoming && Store.getSong(UI.share.existingId);
   if (!target) return;
   const keep = { title: target.title, artist: target.artist };
-  const song = Store.updateSong(target.id, Object.assign({}, incoming, keep));
+  const data = Object.assign({}, incoming, keep);
+  if (incoming.links) data.links = Object.assign({}, target.links, incoming.links);     // les liens reçus complètent les vôtres, sans en effacer
+  const song = Store.updateSong(target.id, data);
   finishSharedImport(song, true);
 });
 document.getElementById('btnShareImportCancel').addEventListener('click', () => {
@@ -9601,7 +11174,7 @@ document.getElementById('btnAutoSections').addEventListener('click', () => {
    Un set entier ne tient pas dans un QR code : il voyage dans un fichier, avec le menu de partage de l'appareil
    (AirDrop, Messages, e-mail…) ou en téléchargement. Le fichier est du JSON lisible : nom de la playlist, réglages du set
    et, pour chaque titre dans l'ordre : titre, artiste, style, chanteurs, instruments, tonalité, tempo, mesure, durée,
-   paroles et accords. Ne partent pas : la transposition et la vitesse de défilement (réglages personnels), les
+   paroles et accords, liens d'écoute. Ne partent pas : la transposition et la vitesse de défilement (réglages personnels), les
    identifiants, les dates. À la réception, rien n'est ajouté sans accord : un aperçu montre ce qui est nouveau,
    ce qui est déjà chez vous et ce qui diffère, et toute l'importation s'annule. */
 
@@ -9613,9 +11186,11 @@ const IMPORT_FILE_MAX_BYTES = 30 * 1024 * 1024;                      // un fichi
 /* ---------------------------------------------------------------------- fabriquer le fichier */
 
 // « Concert du 18 octobre.musicapp.json » : sans caractères interdits dans un nom de fichier
+function safeFileBase(name){
+  return String(name || '').replace(/[\u0000-\u001F\\/:*?"<>|]+/g, ' ').replace(/\s+/g, ' ').trim().replace(/^\.+/, '').slice(0, 60).trim() || 'playlist';
+}
 function playlistFileName(name, ext){
-  const base = String(name || '').replace(/[\u0000-\u001F\\/:*?"<>|]+/g, ' ').replace(/\s+/g, ' ').trim().replace(/^\.+/, '').slice(0, 60).trim() || 'playlist';
-  return base + '.musicapp' + ext;
+  return safeFileBase(name) + '.musicapp' + ext;
 }
 
 function buildPlaylistFile(playlist){
@@ -9623,26 +11198,34 @@ function buildPlaylistFile(playlist){
   if (playlist.gapSeconds !== undefined) options.gapSeconds = normalizeGap(playlist.gapSeconds);
   if (normalizeTargetMinutes(playlist.targetMinutes)) options.targetMinutes = normalizeTargetMinutes(playlist.targetMinutes);
   if (normalizeClock(playlist.startTime)) options.startTime = normalizeClock(playlist.startTime);
-  return {
+  const playlistLinks = normalizePlaylistLinks(playlist.links);
+  const file = {
     format: PLAYLIST_FILE_FORMAT,
     version: PLAYLIST_FILE_VERSION,
     app: 'MusicApp ' + APP_VERSION,
     exportedAt: new Date().toISOString(),
     name: playlist.name,
     options,
-    songs: playlist.songIds.map(id => Store.getSong(id)).filter(Boolean).map(song => ({
-      title: song.title,
-      artist: song.artist || '',
-      style: song.style || '',
-      singers: song.singers || '',
-      instruments: getSongInstruments(song).slice(),
-      originalKey: song.originalKey || '',
-      bpm: normalizeBpm(song.bpm),
-      timeSig: normalizeTimeSignature(song.timeSig),
-      duration: normalizeDuration(song.duration),
-      content: song.content || '',
-    })),
+    songs: playlist.songIds.map(id => Store.getSong(id)).filter(Boolean).map((song) => {
+      const entry = {
+        title: song.title,
+        artist: song.artist || '',
+        style: song.style || '',
+        singers: song.singers || '',
+        instruments: getSongInstruments(song).slice(),
+        originalKey: song.originalKey || '',
+        bpm: normalizeBpm(song.bpm),
+        timeSig: normalizeTimeSignature(song.timeSig),
+        duration: normalizeDuration(song.duration),
+        content: song.content || '',
+      };
+      const links = normalizeSongLinks(song.links);
+      if (links) entry.links = links;
+      return entry;
+    }),
   };
+  if (playlistLinks) file.links = playlistLinks;                     // la playlist Spotify / Apple Music de la setlist : les autres musiciens peuvent l'écouter
+  return file;
 }
 function playlistFileText(playlist){
   return JSON.stringify(buildPlaylistFile(playlist), null, 1);
@@ -9764,7 +11347,7 @@ function sanitizeFileSong(o){
   const title = clipText(o.title, 200).trim();
   const content = clipText(o.content, 100000).replace(/\r\n?/g, '\n');                // fins de ligne Windows ou Mac : un seul style
   if (!title && !content.trim()) return null;
-  return {
+  const clean = {
     title: title || 'Sans titre',
     artist: clipText(o.artist, 200).trim(),
     style: clipText(o.style, 100).trim(),
@@ -9776,6 +11359,9 @@ function sanitizeFileSong(o){
     duration: normalizeDuration(o.duration),
     content,
   };
+  const links = normalizeSongLinks(o.links);
+  if (links) clean.links = links;
+  return clean;
 }
 
 // -> { playlist: { name, options: { gap?, target?, startTime? }, songs, dropped } } ou { error }
@@ -9795,12 +11381,21 @@ function parsePlaylistFile(parsed){
   if (target) options.target = target;
   const clock = normalizeClock(raw.startTime);
   if (clock) options.startTime = clock;
-  return { playlist: { name: clipText(parsed.name, 100).trim() || 'Playlist reçue', options, songs, dropped: parsed.songs.length - songs.length } };
+  const playlist = { name: clipText(parsed.name, 100).trim() || 'Playlist reçue', options, songs, dropped: parsed.songs.length - songs.length };
+  const links = normalizePlaylistLinks(parsed.links);
+  if (links) playlist.links = links;
+  return { playlist };
 }
 
-/* ---------------------------------------------------------------------- aperçu avant l'ajout */
+/* ---------------------------------------------------------------------- écran d'import : choisir ce qui entre */
 
-const PlImport = { data: null, matches: [], policy: 'keep' };
+// Tout import (set reçu, export EasyZic, sauvegarde, fiche ChordPro déjà connue) passe par le même écran : chaque chanson
+// reçue est comparée à la bibliothèque ; on coche celles qu'on veut et, pour celles qui existent déjà avec un texte
+// différent, on choisit quoi en faire (garder la mienne, la mettre à jour, garder les deux). Rien n'est modifié avant « Ajouter ».
+//   data : { kind: 'playlist' | 'easyzic' | 'backup' | 'song', title, name, options, songs, dropped, playlists?, parsed?, personal? }
+//   matches[i] : { song, existing, status: 'new' | 'same' | 'diff', checked, action: 'keep' | 'replace' | 'copy' }
+const PlImport = { data: null, matches: [], policy: 'keep', makePlaylist: true, hideSame: false, playlistPicks: [] };
+const IMPORT_MAX_SONGS = 3000;
 
 const textKey = (t) => String(t || '').trim().toLocaleLowerCase('fr');
 const artistsMatch = (a, b) => !String(a || '').trim() || !String(b || '').trim() || textKey(a) === textKey(b);
@@ -9810,76 +11405,298 @@ const sameContent = (a, b) => normalizedContent(a) === normalizedContent(b);
 
 // Pour chaque titre reçu : la fiche de la bibliothèque qui lui correspond (même titre, artiste compatible), s'il y en a une.
 // Une fiche ne répond qu'à un seul titre reçu : un deuxième titre de même nom devient une nouvelle chanson.
+// Une sauvegarde porte les identifiants d'origine : une fiche qui a gardé le sien est la même chanson, même renommée.
 function matchIncomingSongs(songs){
-  const byTitle = new Map();
+  const byTitle = new Map(), byId = new Map();
   Store.state.songs.forEach((s) => {
+    byId.set(s.id, s);
     const key = textKey(s.title);
     if (!byTitle.has(key)) byTitle.set(key, []);
     byTitle.get(key).push(s);
   });
   const claimed = new Set();
   return songs.map((song) => {
-    const twins = (byTitle.get(textKey(song.title)) || []).filter(s => !claimed.has(s.id) && artistsMatch(s.artist, song.artist));
-    const existing = twins.find(s => sameContent(s.content, song.content)) || twins[0] || null;
+    let existing = song.srcId && byId.has(song.srcId) && !claimed.has(song.srcId) ? byId.get(song.srcId) : null;
+    if (!existing){
+      const twins = (byTitle.get(textKey(song.title)) || []).filter(s => !claimed.has(s.id) && artistsMatch(s.artist, song.artist));
+      existing = twins.find(s => sameContent(s.content, song.content)) || twins[0] || null;
+    }
     if (existing) claimed.add(existing.id);
-    return { song, existing, status: !existing ? 'new' : (sameContent(existing.content, song.content) ? 'same' : 'diff') };
+    const status = !existing ? 'new' : (sameContent(existing.content, song.content) ? 'same' : 'diff');
+    return { song, existing, status, checked: true, action: PlImport.policy };
   });
 }
 
 // « Concert », puis « Concert (reçue) », « Concert (reçue 2) »… : un nom que personne n'utilise encore
-function receivedPlaylistName(name){
+function receivedPlaylistName(name, word){
   const taken = (n) => Store.state.playlists.some(p => textKey(p.name) === textKey(n));
   if (!taken(name)) return name;
-  let candidate = name + ' (reçue)';
-  for (let n = 2; taken(candidate); n++) candidate = name + ' (reçue ' + n + ')';
+  const tag = word || 'reçue';
+  let candidate = name + ' (' + tag + ')';
+  for (let n = 2; taken(candidate); n++) candidate = name + ' (' + tag + ' ' + n + ')';
   return candidate;
 }
 
+const PL_ACTIONS = [
+  { id: 'keep', label: 'Garder la mienne' },
+  { id: 'replace', label: 'Mettre à jour' },
+  { id: 'copy', label: 'Garder les deux' },
+];
 const PL_POLICY_HINT = {
   keep: 'Votre fiche reste telle quelle : la playlist l\'utilise.',
   replace: 'Le texte, les accords et les informations reçus prennent la place des vôtres ; titre, transposition et vitesse restent les vôtres.',
   copy: 'La fiche reçue est ajoutée en plus de la vôtre : vous aurez les deux.',
 };
-const PL_POLICY_NOTE = { keep: 'Votre fiche est utilisée', replace: 'Votre fiche sera mise à jour', copy: 'Une copie sera ajoutée' };
+const PL_POLICY_MIXED = 'Choix différents selon les chansons : ils se règlent ligne par ligne, ci-dessous.';
 const PL_STATUS_BADGE = { new: 'Nouvelle', same: 'Déjà chez vous', diff: 'Différente' };
 const PL_STATUS_CLASS = { new: 'is-new', same: 'is-same', diff: 'is-diff' };
 
-function renderPlaylistImport(){
+/* ---- ce que contient chaque sorte de fichier ---- */
+
+// Un set reçu (fichier MusicApp déjà nettoyé par parsePlaylistFile)
+function reviewFromPlaylistFile(playlist){
+  return { kind: 'playlist', title: 'Playlist reçue', name: playlist.name, options: playlist.options, links: playlist.links, songs: playlist.songs, dropped: playlist.dropped };
+}
+
+// Réglages d'un set (pause, objectif, heure de début) lus dans un fichier ou dans une playlist de sauvegarde
+function playlistOptionsFromRaw(raw){
+  const options = {};
+  if (!raw || typeof raw !== 'object') return options;
+  if (raw.gapSeconds !== undefined && raw.gapSeconds !== null && raw.gapSeconds !== '') options.gap = normalizeGap(raw.gapSeconds);
+  const target = normalizeTargetMinutes(raw.targetMinutes);
+  if (target) options.target = target;
+  const clock = normalizeClock(raw.startTime);
+  if (clock) options.startTime = clock;
+  return options;
+}
+
+// Un export EasyZic : les chansons converties. La vitesse EasyZic devient celle de la fiche créée (jamais celle d'une fiche existante).
+function reviewFromEasyZic(parsed, filename){
+  const order = Array.isArray(parsed.itemsOrder) ? parsed.itemsOrder : Object.keys(parsed.items);
+  if (order.length > IMPORT_MAX_SONGS) return { error: 'Ce fichier contient trop de chansons (' + IMPORT_MAX_SONGS + ' au plus).' };
+  const songs = [], seen = new Set();
+  order.forEach((id) => {
+    if (seen.has(id)) return;                                        // un même identifiant cité deux fois : une seule chanson
+    seen.add(id);
+    const item = Object.prototype.hasOwnProperty.call(parsed.items, id) ? parsed.items[id] : null;
+    if (!item || typeof item !== 'object' || Array.isArray(item)) return;
+    const converted = convertEasyZicItem(item);
+    const clean = sanitizeFileSong(converted);
+    if (!clean) return;
+    clean.scrollSpeed = converted.scrollSpeed;
+    delete clean.instruments;                                        // EasyZic ne dit pas l'instrument : une fiche créée prend la guitare, une fiche mise à jour garde les siens
+    songs.push(clean);
+  });
+  if (!songs.length) return { error: 'Ce fichier EasyZic ne contient aucune chanson lisible.' };
+  const name = (filename || 'Import EasyZic').replace(/\.ezp$/i, '').replace(/[_-]+/g, ' ').trim() || 'Import EasyZic';
+  return { kind: 'easyzic', title: 'Import EasyZic', name, options: {}, songs, dropped: order.length - songs.length, personal: true };
+}
+
+// Une sauvegarde complète : chansons (avec leur identifiant d'origine, leur transposition et leur vitesse) et playlists
+function reviewFromBackup(parsed){
+  if (parsed.songs.length > IMPORT_MAX_SONGS) return { error: 'Ce fichier contient trop de chansons (' + IMPORT_MAX_SONGS + ' au plus).' };
+  const legacy = !(parsed.settings && parsed.settings.speedScale === SPEED_SCALE_VERSION);
+  const songs = [], indexOfId = new Map();
+  parsed.songs.forEach((raw) => {
+    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return;
+    const clean = sanitizeFileSong(Store.normalizeSong(Object.assign({}, raw)));
+    if (!clean) return;
+    clean.srcId = typeof raw.id === 'string' ? raw.id : '';
+    const speed = Number(raw.scrollSpeed);
+    if (speed >= 1) clean.scrollSpeed = legacy ? legacySpeedToLevel(speed) : clamp(Math.round(speed), 1, 10);
+    const shift = Math.round(Number(raw.transpose));
+    clean.transpose = shift >= -12 && shift <= 12 ? shift : 0;
+    if (clean.srcId && !indexOfId.has(clean.srcId)) indexOfId.set(clean.srcId, songs.length);
+    songs.push(clean);
+  });
+  if (!songs.length) return { error: parsed.songs.length ? 'Cette sauvegarde ne contient aucune chanson lisible.' : 'Cette sauvegarde ne contient aucune chanson.' };
+  const playlists = parsed.playlists
+    .filter(pl => pl && typeof pl === 'object' && !Array.isArray(pl))
+    .map(pl => ({
+      name: clipText(pl.name, 100).trim() || 'Playlist',
+      indexes: Array.from(new Set((Array.isArray(pl.songIds) ? pl.songIds : []).map(id => indexOfId.get(id)).filter(i => i !== undefined))),
+      options: playlistOptionsFromRaw(pl),
+      links: normalizePlaylistLinks(pl.links),
+    }));
+  return { kind: 'backup', title: 'Importer une sauvegarde', name: '', options: {}, songs, dropped: parsed.songs.length - songs.length, playlists, parsed, personal: true };
+}
+
+// Une fiche ChordPro ou un texte (.cho, .pro, .txt)
+function chordProIncoming(filename, rawText){
+  const converted = convertChordProContent(rawText);
+  const fallbackTitle = (filename || 'Chanson importée').replace(/\.(cho|pro|chopro|crd|txt)$/i, '').replace(/[_-]+/g, ' ').trim();
+  const song = sanitizeFileSong({
+    title: converted.title || fallbackTitle || 'Chanson importée',
+    artist: converted.artist,
+    originalKey: converted.key, bpm: converted.bpm, timeSig: converted.timeSig,
+    content: converted.content,
+  });
+  delete song.instruments;                                           // une fiche créée prend la guitare, une fiche mise à jour garde ses instruments
+  return song;
+}
+
+// Une fiche inconnue est ajoutée tout de suite (aucun choix à faire) ; une fiche déjà présente passe par l'écran d'import
+function importChordProText(filename, rawText){
+  const incoming = chordProIncoming(filename, rawText);
+  const match = matchIncomingSongs([incoming])[0];
+  if (match.status === 'same'){
+    document.getElementById('modalSettings').hidden = true;
+    const id = match.existing.id;
+    toast('« ' + incoming.title + ' » est déjà dans votre bibliothèque.', false, { label: 'Ouvrir', onClick: () => openPrompter(id, { type: 'library' }) });
+    return true;
+  }
+  if (match.status === 'diff'){
+    openImportReview({ kind: 'song', title: 'Cette chanson existe déjà', name: '', options: {}, songs: [incoming], dropped: 0 });
+    return true;
+  }
+  const song = Store.createSong(incoming);
+  if (UI.currentPlaylistId) Store.addSongToPlaylist(UI.currentPlaylistId, song.id);
+  document.getElementById('modalSettings').hidden = true;
+  renderLibrary();
+  showView('library');
+  toast('« ' + song.title + ' » importée.');
+  return true;
+}
+
+// Une bibliothèque vide, ou qui ne contient que la démonstration du premier lancement : rien à protéger, rien à comparer
+function libraryIsUntouched(){
+  const { songs, playlists } = Store.state;
+  if (!songs.length && !playlists.length) return true;
+  const demo = songs.length === 1 && songs[0].title === 'Chanson de démonstration' && songs[0].artist === 'MusicApp';
+  return demo && playlists.length <= 1 && (!playlists.length || (playlists[0].name === 'Ma première playlist' && playlists[0].songIds.length <= 1));
+}
+
+// La restauration complète : tout est remplacé par le contenu du fichier (réglages compris)
+function replaceLibraryWith(parsed){
+  showConfirm('Importer les données', 'Ceci remplacera toutes vos chansons et playlists actuelles par le contenu du fichier. Continuer ?', () => {
+    Store.adopt(parsed);
+    Store.save();
+    UI.currentPlaylistId = null;
+    document.getElementById('modalSettings').hidden = true;
+    showView('library');
+    toast('Données importées.');
+  });
+}
+
+/* ---- affichage ---- */
+
+function importRowHTML(m, i){
+  const title = escapeHTML(m.song.title);
+  const action = m.status === 'diff'
+    ? '<select class="pli-action" data-pli-action aria-label="Que faire de « ' + title + ' » ?"' + (m.checked ? '' : ' disabled') + '>' +
+        PL_ACTIONS.map(a => '<option value="' + a.id + '"' + (a.id === m.action ? ' selected' : '') + '>' + a.label + '</option>').join('') + '</select>'
+    : '';
+  return '<li class="pli-row ' + PL_STATUS_CLASS[m.status] + (m.checked ? '' : ' is-off') + '" data-i="' + i + '">' +
+    '<label class="sec-check"><input type="checkbox" data-pli-check' + (m.checked ? ' checked' : '') + ' aria-label="Importer « ' + title + ' »"></label>' +
+    '<span class="pli-num">' + (i + 1) + '</span>' +
+    '<span class="pli-main"><span class="pli-title">' + title + '</span>' +
+      (m.song.artist ? '<span class="pli-artist">' + escapeHTML(m.song.artist) + '</span>' : '') + '</span>' +
+    '<span class="pli-badge">' + PL_STATUS_BADGE[m.status] + '</span>' + action +
+  '</li>';
+}
+
+function renderImportList(){
+  const { matches, hideSame } = PlImport;
+  document.getElementById('plImportList').innerHTML = matches.map((m, i) => (hideSame && m.status === 'same') ? '' : importRowHTML(m, i)).join('');
+}
+
+// Les chansons d'une playlist de la sauvegarde qui seront réellement importées (cochées)
+function importPlaylistPickedCount(pl){
+  return pl.indexes.filter(i => PlImport.matches[i] && PlImport.matches[i].checked).length;
+}
+
+function renderImportPlaylists(){
+  const { data, playlistPicks } = PlImport;
+  if (!data || data.kind !== 'backup') return;
+  document.getElementById('plImportPlaylists').innerHTML = data.playlists.map((pl, k) => {
+    const n = importPlaylistPickedCount(pl);
+    const on = !!playlistPicks[k] && n > 0;
+    return '<li class="pli-pl' + (on ? '' : ' is-off') + '" data-k="' + k + '">' +
+      '<label class="sec-check"><input type="checkbox" data-pli-pl' + (on ? ' checked' : '') + (n ? '' : ' disabled') + ' aria-label="Recréer la playlist « ' + escapeHTML(pl.name) + ' »"></label>' +
+      '<span class="pli-main"><span class="pli-title">' + escapeHTML(pl.name) + '</span><span class="pli-artist">' + countLabel(n, 'titre') + '</span></span>' +
+    '</li>';
+  }).join('');
+}
+
+// Les playlists de la sauvegarde qui seront recréées : cochées et gardant au moins un titre coché
+function importPlaylistsToMake(){
+  const { data, playlistPicks } = PlImport;
+  return data.kind === 'backup' ? data.playlists.filter((pl, k) => playlistPicks[k] && importPlaylistPickedCount(pl) > 0) : [];
+}
+
+function refreshImportHeader(){
   const { data, matches } = PlImport;
+  if (!data) return;
+  const kind = data.kind;
   const counts = { new: 0, same: 0, diff: 0 };
-  matches.forEach(m => { counts[m.status]++; });
-  const gap = data.options.gap !== undefined ? data.options.gap : normalizeGap(undefined);
-  document.getElementById('plImportSubtitle').textContent = countLabel(data.songs.length, 'titre') + ' · ' + setTotalText(timingOfSongs(data.songs, gap));
+  let off = 0;
+  matches.forEach((m) => { if (m.checked) counts[m.status]++; else off++; });
+  const picked = matches.length - off;
+  document.getElementById('plImportTitle').textContent = data.title;
+  const gap = data.options && data.options.gap !== undefined ? data.options.gap : normalizeGap(undefined);
+  document.getElementById('plImportSubtitle').textContent = kind === 'playlist'
+    ? countLabel(data.songs.length, 'titre') + ' · ' + setTotalText(timingOfSongs(data.songs, gap))
+    : (kind === 'song' ? 'Elle diffère de celle de votre bibliothèque.' : countLabel(data.songs.length, 'chanson') + ' dans le fichier');
   const parts = [];
   if (counts.new) parts.push(countLabel(counts.new, 'nouvelle', 'nouvelles'));
   if (counts.same) parts.push(counts.same + ' déjà chez vous');
   if (counts.diff) parts.push(countLabel(counts.diff, 'différente', 'différentes'));
-  document.getElementById('plImportSummary').textContent = parts.join(' · ') + '. Rien n\'est ajouté avant votre accord.' +
+  if (off) parts.push(countLabel(off, 'ignorée', 'ignorées'));
+  document.getElementById('plImportSummary').textContent = (parts.length ? parts.join(' · ') : 'Aucune chanson cochée') + '. Rien n\'est ajouté avant votre accord.' +
     (data.dropped ? ' ' + countLabel(data.dropped, 'entrée illisible ignorée', 'entrées illisibles ignorées') + '.' : '');
-  document.getElementById('plImportPolicy').hidden = counts.diff === 0;
+  // choix pour les chansons déjà présentes mais différentes : le bouton du haut règle toutes les lignes, chaque ligne peut ensuite s'en écarter
+  const diffActions = new Set(matches.filter(m => m.status === 'diff').map(m => m.action));
+  const single = diffActions.size === 1 ? Array.from(diffActions)[0] : null;
+  document.getElementById('plImportPolicy').hidden = diffActions.size === 0 || kind === 'song';
   document.querySelectorAll('[data-pl-policy]').forEach((btn) => {
-    btn.setAttribute('aria-pressed', btn.dataset.plPolicy === PlImport.policy ? 'true' : 'false');
+    btn.setAttribute('aria-pressed', btn.dataset.plPolicy === single ? 'true' : 'false');
   });
-  document.getElementById('plImportPolicyHint').textContent = PL_POLICY_HINT[PlImport.policy];
-  document.getElementById('plImportList').innerHTML = matches.map((m, i) =>
-    '<li class="pli-row ' + PL_STATUS_CLASS[m.status] + '">' +
-      '<span class="pli-num">' + (i + 1) + '</span>' +
-      '<span class="pli-main"><span class="pli-title">' + escapeHTML(m.song.title) + '</span>' +
-        (m.song.artist ? '<span class="pli-artist">' + escapeHTML(m.song.artist) + '</span>' : '') +
-        (m.status === 'diff' ? '<span class="pli-note">' + PL_POLICY_NOTE[PlImport.policy] + '</span>' : '') + '</span>' +
-      '<span class="pli-badge">' + PL_STATUS_BADGE[m.status] + '</span>' +
-    '</li>').join('');
+  document.getElementById('plImportPolicyHint').textContent = single ? PL_POLICY_HINT[single] : PL_POLICY_MIXED;
+  // outils de la liste
+  document.getElementById('plImportTools').hidden = matches.length < 2;
+  const sameCount = matches.filter(m => m.status === 'same').length;
+  const hideBtn = document.getElementById('btnPlImportHideSame');
+  hideBtn.hidden = !(sameCount > 0 && sameCount < matches.length);
+  hideBtn.setAttribute('aria-pressed', PlImport.hideSame ? 'true' : 'false');
+  hideBtn.textContent = PlImport.hideSame ? 'Afficher les identiques' : 'Masquer les identiques';
+  // playlist à créer (set reçu, EasyZic) ou playlists de la sauvegarde
+  const playlistKind = kind === 'playlist' || kind === 'easyzic';
+  document.getElementById('plImportMakeBox').hidden = !playlistKind;
+  document.getElementById('plImportMake').checked = PlImport.makePlaylist;
+  document.getElementById('plImportName').disabled = !PlImport.makePlaylist;
+  document.getElementById('plImportPlaylistsBox').hidden = !(kind === 'backup' && data.playlists.length);
+  // boutons
+  const add = document.getElementById('btnPlImportAdd');
+  add.disabled = picked === 0;
+  add.textContent = !picked ? 'Aucune chanson cochée'
+    : kind === 'song' ? 'Valider'
+    : (playlistKind && PlImport.makePlaylist) ? 'Ajouter la playlist'
+    : 'Importer ' + countLabel(picked, 'chanson');
+  document.getElementById('plImportReplaceBox').hidden = kind !== 'backup';
 }
 
-function openPlaylistImport(data){
+function renderImportReview(){
+  refreshImportHeader();
+  renderImportList();
+  renderImportPlaylists();
+}
+
+function openImportReview(data){
   hideAllModals();
   PlImport.data = data;                                              // après hideAllModals : refermer une ancienne fenêtre d'import efface PlImport.data
+  PlImport.policy = data.kind === 'song' ? 'copy' : 'keep';          // une fiche choisie une à une : on l'importe ; un lot : on ne touche à rien de ce qui existe
+  PlImport.makePlaylist = true;
+  PlImport.hideSame = false;
+  PlImport.playlistPicks = (data.playlists || []).map(() => true);
   PlImport.matches = matchIncomingSongs(data.songs);
-  PlImport.policy = 'keep';
-  document.getElementById('plImportName').value = receivedPlaylistName(data.name);
-  renderPlaylistImport();
-  document.getElementById('modalPlaylistImport').hidden = false;
+  document.getElementById('plImportName').value = receivedPlaylistName(data.name || '');
+  renderImportReview();
+  const modal = document.getElementById('modalPlaylistImport');
+  modal.hidden = false;
+  modal.querySelector('.modal-box').scrollTop = 0;
 }
+
+function openPlaylistImport(playlist){ openImportReview(reviewFromPlaylistFile(playlist)); }
 
 // Un fichier lu et décodé : ouvre l'aperçu, ou dit pourquoi il n'est pas utilisable
 function importPlaylistFile(parsed){
@@ -9889,7 +11706,7 @@ function importPlaylistFile(parsed){
   return true;
 }
 
-/* ---------------------------------------------------------------------- ajouter la playlist */
+/* ---------------------------------------------------------------------- ajouter ce qui est coché */
 
 // Ce que la fiche reçue apporte à la fiche existante quand on la met à jour : ce qui est renseigné dans le fichier remplace ;
 // ce qui est vide dans le fichier n'efface jamais rien. Le titre, la transposition et la vitesse restent ceux de l'utilisateur.
@@ -9897,61 +11714,109 @@ function replacementFields(incoming, target){
   const data = { content: incoming.content };
   ['style', 'singers', 'originalKey'].forEach((k) => { if (incoming[k]) data[k] = incoming[k]; });
   if (!target.artist && incoming.artist) data.artist = incoming.artist;
-  if (incoming.instruments.length) data.instruments = incoming.instruments.slice();
+  if (incoming.instruments && incoming.instruments.length) data.instruments = incoming.instruments.slice();
   if (incoming.bpm){ data.bpm = incoming.bpm; data.timeSig = incoming.timeSig; }
   if (incoming.duration) data.duration = incoming.duration;
+  if (incoming.links){                                               // les liens d'écoute reçus complètent les vôtres, sans jamais en effacer
+    const merged = Object.assign({}, target.links, incoming.links);
+    if (LISTEN_SERVICES.some(({ id }) => merged[id] !== (target.links || {})[id])) data.links = merged;
+  }
   return data;
 }
 
-function applyPlaylistImport(){
-  const { data, matches, policy } = PlImport;
+function applyImportReview(){
+  const { data, matches } = PlImport;
   if (!data) return;
-  const name = document.getElementById('plImportName').value.trim() || receivedPlaylistName(data.name);
-  const patches = [], toCreate = [], slots = [];
-  matches.forEach((m, i) => {
-    if (m.status === 'same' || (m.status === 'diff' && policy === 'keep')){
-      slots.push(m.existing.id);
-    } else if (m.status === 'diff' && policy === 'replace'){
+  const kind = data.kind;
+  const picked = [];
+  matches.forEach((m, i) => { if (m.checked) picked.push(i); });
+  if (!picked.length) return;
+
+  // 1. ce qui arrive à chaque chanson cochée : fiche existante gardée, mise à jour, ou nouvelle fiche
+  const patches = [], toCreate = [], slotOf = new Map();             // numéro de ligne -> { id } ou { create: rang dans toCreate }
+  picked.forEach((i) => {
+    const m = matches[i];
+    const action = m.status === 'diff' ? m.action : null;
+    if (m.status === 'same' || action === 'keep'){
+      slotOf.set(i, { id: m.existing.id });
+    } else if (action === 'replace'){
       patches.push({ id: m.existing.id, data: replacementFields(m.song, m.existing) });
-      slots.push(m.existing.id);
+      slotOf.set(i, { id: m.existing.id });
     } else {
+      slotOf.set(i, { create: toCreate.length });                    // nouvelle chanson, ou « garder les deux »
       toCreate.push(m.song);
-      slots.push(null);                                              // l'identifiant de la nouvelle fiche viendra juste après
     }
   });
+  const makeName = data.kind === 'playlist' || data.kind === 'easyzic' ? document.getElementById('plImportName').value.trim() || receivedPlaylistName(data.name) : '';
   const snapshot = Store.updateSongs(patches);
-  const created = Store.createSongs(toCreate);
-  let next = 0;
-  const ids = [];
-  slots.forEach((id) => {
-    const finalId = id || created[next++].id;
-    if (!ids.includes(finalId)) ids.push(finalId);
-  });
-  const playlist = Store.createPlaylist(name);
-  Store.addSongsToPlaylist(playlist.id, ids);
-  if (Object.keys(data.options).length) Store.updatePlaylistOptions(playlist.id, data.options);
+  const created = Store.createSongs(toCreate, { personal: !!data.personal });
+  const finalId = (i) => { const s = slotOf.get(i); return s.id || created[s.create].id; };
+  const uniqueIds = (rows) => { const ids = []; rows.forEach((i) => { const id = finalId(i); if (!ids.includes(id)) ids.push(id); }); return ids; };
+
+  // 2. les playlists
+  const createdPlaylists = [];
+  const makeOne = (name, ids, options, links) => {
+    const playlist = Store.createPlaylist(name);
+    Store.addSongsToPlaylist(playlist.id, ids);
+    if (options && Object.keys(options).length) Store.updatePlaylistOptions(playlist.id, options);
+    if (links) Store.setPlaylistLinks(playlist.id, links);
+    createdPlaylists.push(playlist);
+    return playlist;
+  };
+  const ids = uniqueIds(picked);
+  if ((kind === 'playlist' || kind === 'easyzic') && PlImport.makePlaylist){
+    makeOne(makeName, ids, data.options, data.links);
+  } else if (kind === 'backup'){
+    importPlaylistsToMake().forEach((pl) => {
+      makeOne(receivedPlaylistName(pl.name, 'importée'), uniqueIds(pl.indexes.filter(i => matches[i] && matches[i].checked)), pl.options, pl.links);
+    });
+  }
+
+  // 3. une fiche ChordPro déjà connue rejoint la playlist ouverte, comme une fiche nouvelle
+  let addedTo = null;
+  if (kind === 'song' && UI.currentPlaylistId && Store.getPlaylist(UI.currentPlaylistId) && !Store.getPlaylist(UI.currentPlaylistId).songIds.includes(ids[0])){
+    addedTo = { playlistId: UI.currentPlaylistId, songId: ids[0] };
+    Store.addSongToPlaylist(addedTo.playlistId, addedTo.songId);
+  }
+
+  // 4. la bibliothèque affiche le résultat
   const previous = UI.currentPlaylistId;
-  UI.currentPlaylistId = playlist.id;
-  UI.searchQuery = '';                                               // un filtre en cours cacherait une partie du set reçu
+  if (kind === 'playlist' && createdPlaylists.length) UI.currentPlaylistId = createdPlaylists[0].id;
+  else if (kind !== 'song') UI.currentPlaylistId = null;             // les nouvelles chansons se voient dans toute la bibliothèque
+  UI.searchQuery = '';                                               // un filtre en cours cacherait une partie de ce qui vient d'arriver
   const search = document.getElementById('librarySearchInput');
   search.value = '';
   document.getElementById('btnClearSearch').hidden = true;
   resetSelection();
   closeModalEl(document.getElementById('modalPlaylistImport'));
   showView('library');
+
+  // 5. le message, avec l'annulation complète
   const extra = [];
   if (created.length) extra.push(countLabel(created.length, 'nouvelle chanson', 'nouvelles chansons'));
   if (snapshot.length) extra.push(countLabel(snapshot.length, 'fiche mise à jour', 'fiches mises à jour'));
-  toast('« ' + playlist.name + ' » ajoutée : ' + countLabel(ids.length, 'titre') + (extra.length ? ' (' + extra.join(', ') + ')' : '') + '.', false, {
+  let message;
+  if (kind === 'song'){
+    message = '« ' + matches[picked[0]].song.title + ' » ' + (created.length ? 'importée (la vôtre est conservée).' : snapshot.length ? 'mise à jour.' : ': votre fiche est conservée.');
+  } else if (createdPlaylists.length && kind !== 'backup'){
+    message = '« ' + createdPlaylists[0].name + ' » ajoutée : ' + countLabel(ids.length, 'titre') + (extra.length ? ' (' + extra.join(', ') + ')' : '') + '.';
+  } else {
+    const bits = extra.slice();
+    if (createdPlaylists.length) bits.push(countLabel(createdPlaylists.length, 'playlist'));
+    message = bits.length ? 'Importé : ' + bits.join(', ') + '.' : 'Rien de nouveau : tout était déjà chez vous.';
+  }
+  const undoable = created.length || snapshot.length || createdPlaylists.length || addedTo;
+  toast(message, false, undoable ? {
     label: 'Annuler',
     onClick: () => {
-      Store.deletePlaylist(playlist.id);
+      createdPlaylists.forEach(p => Store.deletePlaylist(p.id));
       Store.deleteSongs(created.map(s => s.id));
       Store.restoreSongFields(snapshot);
+      if (addedTo && Store.getPlaylist(addedTo.playlistId)) Store.removeSongFromPlaylist(addedTo.playlistId, addedTo.songId);
       UI.currentPlaylistId = previous && Store.getPlaylist(previous) ? previous : null;
       renderLibrary();
     },
-  });
+  } : undefined);
 }
 
 /* ---------------------------------------------------------------------- branchements */
@@ -9960,15 +11825,63 @@ document.getElementById('btnPlShareNative').addEventListener('click', sharePlayl
 document.getElementById('btnPlShareDownload').addEventListener('click', downloadPlaylistFlow);
 document.getElementById('btnClosePlShare').addEventListener('click', () => closeModalEl(document.getElementById('modalPlaylistShare')));
 
+// Une case ou un choix change : la ligne se met à jour sur place (le focus reste où il est), puis les totaux
+document.getElementById('plImportList').addEventListener('change', (e) => {
+  const li = e.target.closest('.pli-row');
+  const m = li && PlImport.data ? PlImport.matches[Number(li.dataset.i)] : null;
+  if (!m) return;
+  if (e.target.matches('[data-pli-check]')) m.checked = e.target.checked;
+  else if (e.target.matches('[data-pli-action]') && PL_POLICY_HINT[e.target.value]) m.action = e.target.value;
+  else return;
+  li.classList.toggle('is-off', !m.checked);
+  const select = li.querySelector('[data-pli-action]');
+  if (select) select.disabled = !m.checked;
+  refreshImportHeader();
+  renderImportPlaylists();
+});
+
 document.getElementById('plImportPolicy').addEventListener('click', (e) => {
   const btn = e.target.closest('[data-pl-policy]');
-  if (!btn || !PlImport.data) return;
+  if (!btn || !PlImport.data || !PL_POLICY_HINT[btn.dataset.plPolicy]) return;
   PlImport.policy = btn.dataset.plPolicy;
-  renderPlaylistImport();
+  PlImport.matches.forEach((m) => { if (m.status === 'diff') m.action = PlImport.policy; });
+  renderImportReview();
 });
-document.getElementById('btnPlImportAdd').addEventListener('click', applyPlaylistImport);
+
+// « Toutes » et « Aucune » ne touchent que les lignes visibles
+function checkAllImportRows(on){
+  if (!PlImport.data) return;
+  PlImport.matches.forEach((m) => { if (!(PlImport.hideSame && m.status === 'same')) m.checked = on; });
+  renderImportReview();
+}
+document.getElementById('btnPlImportAll').addEventListener('click', () => checkAllImportRows(true));
+document.getElementById('btnPlImportNone').addEventListener('click', () => checkAllImportRows(false));
+document.getElementById('btnPlImportHideSame').addEventListener('click', () => {
+  if (!PlImport.data) return;
+  PlImport.hideSame = !PlImport.hideSame;
+  renderImportReview();
+});
+
+document.getElementById('plImportMake').addEventListener('change', (e) => {
+  PlImport.makePlaylist = e.target.checked;
+  refreshImportHeader();
+  if (e.target.checked) document.getElementById('plImportName').focus();
+});
+document.getElementById('plImportPlaylists').addEventListener('change', (e) => {
+  const li = e.target.closest('.pli-pl');
+  if (!li || !PlImport.data || !e.target.matches('[data-pli-pl]')) return;
+  PlImport.playlistPicks[Number(li.dataset.k)] = e.target.checked;
+  li.classList.toggle('is-off', !e.target.checked);
+  refreshImportHeader();
+});
+
+document.getElementById('btnPlImportReplaceAll').addEventListener('click', () => {
+  const data = PlImport.data;
+  if (data && data.kind === 'backup') replaceLibraryWith(data.parsed);
+});
+document.getElementById('btnPlImportAdd').addEventListener('click', applyImportReview);
 document.getElementById('plImportName').addEventListener('keydown', (e) => {
-  if (e.key === 'Enter'){ e.preventDefault(); applyPlaylistImport(); }
+  if (e.key === 'Enter'){ e.preventDefault(); applyImportReview(); }
 });
 document.getElementById('btnPlImportCancel').addEventListener('click', () => closeModalEl(document.getElementById('modalPlaylistImport')));
 document.getElementById('btnClosePlImport').addEventListener('click', () => closeModalEl(document.getElementById('modalPlaylistImport')));
@@ -9984,6 +11897,12 @@ LIBRARY_TOOLS.push({
   when: () => inOpenPlaylist() && Store.getPlaylist(UI.currentPlaylistId).songIds.some(id => !!Store.getSong(id)),
   sublabel: () => 'un fichier avec tous les titres',
   run: () => openPlaylistShare(UI.currentPlaylistId),
+});
+LIBRARY_TOOLS.push({
+  id: 'listen-playlist', label: 'Écouter cette playlist (Spotify, Apple Music)', order: 62,
+  when: () => inOpenPlaylist() && Store.getPlaylist(UI.currentPlaylistId).songIds.some(id => !!Store.getSong(id)),
+  sublabel: () => 'liens, liste à copier, playlist Spotify',
+  run: () => openPlaylistListen(UI.currentPlaylistId),
 });
 LIBRARY_TOOLS.push({
   id: 'receive-playlist', label: 'Recevoir une playlist', order: 70,
@@ -10034,6 +11953,7 @@ function init(){
   showView('library');
   checkExportReminder();
   handleShareHash();                        // lien de partage ouvert dans l'appli (appareil photo, message…)
+  spotifyResumeAfterLogin();                // retour de la page de connexion de Spotify, s'il y en a un
   pwaInit();                                // mode hors ligne : service worker, installation
 }
 
