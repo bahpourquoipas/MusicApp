@@ -1,12 +1,13 @@
 /* =========================================================================
    MusicApp — service worker : l'appli reste utilisable SANS RÉSEAU.
 
-   Stratégie « copie locale d'abord, mise à jour en coulisse » :
+   Stratégie « copie locale d'abord, mise à jour mise de côté » :
    - Au premier chargement (avec réseau), la page et ses icônes sont copiées dans le cache de l'appareil.
    - Ensuite, chaque lancement sert cette copie : instantané, même sans réseau ni Wi-Fi capricieux de salle.
      En arrière-plan, si le réseau répond, on vérifie qu'il n'existe pas une version plus récente ;
-     si oui, elle est mise de côté et l'appli PROPOSE de recharger. Jamais de rechargement automatique :
-     un morceau en cours n'est jamais interrompu.
+     si oui, elle est téléchargée et MISE DE CÔTÉ (sous une clé à part, jamais servie) : l'appli PROPOSE de recharger.
+     La copie utilisée ne change que sur accord (« Recharger »). Ni en plein morceau, ni au lancement suivant,
+     ni juste avant de monter sur scène : une version que le musicien a répétée ne change jamais toute seule.
    - Une réponse qui n'est pas la vraie page (portail captif d'un hôtel, erreur 404, page tronquée) n'est JAMAIS
      enregistrée : la copie qui fonctionne reste en place.
    - Les adresses d'autres sites (Google Drive, par exemple) ne sont jamais interceptées.
@@ -19,6 +20,7 @@
 const PREFIX = 'musicapp-shell-';
 const CACHE = PREFIX + '1';                                   // changer ce numéro force un nouveau téléchargement complet
 const APP_URL = new URL('index.html', self.location).href;    // la page, quel que soit le chemin de navigation demandé
+const PENDING_URL = new URL('index.html?en-attente', self.location).href;   // la version téléchargée en coulisse : mise de côté, servie seulement après accord
 const ASSET_URLS = ['manifest.webmanifest', 'icon-192.png', 'icon-512.png', 'icon-maskable-512.png', 'apple-touch-icon.png']
   .map(name => new URL(name, self.location).href);           // facultatifs : leur absence ne bloque pas l'installation
 const APP_MARK = 'name="musicapp-shell"';                     // repère présent dans la vraie page (voir index.html)
@@ -53,8 +55,9 @@ async function notifyClients(message){
   all.forEach(client => client.postMessage(Object.assign({ musicapp: MSG }, message)));
 }
 
-/* Compare avec la copie locale et la remplace si la page du serveur est différente.
-   Résultat : 'updated' | 'current' | 'offline' | 'invalid' */
+/* Compare avec la copie locale. Si la page du serveur est différente, elle est mise de côté (PENDING_URL) et la page est
+   prévenue ; la copie utilisée n'est PAS touchée. Seule exception : aucune copie du tout (cache vidé), la page est enregistrée.
+   Résultat : 'updated' (une version attend l'accord) | 'current' | 'offline' | 'invalid' */
 async function refreshApp(){
   let fresh;
   try {
@@ -66,20 +69,59 @@ async function refreshApp(){
   }
   if (!isGenuineApp(fresh.res, fresh.text)) return 'invalid';
   const cache = await caches.open(CACHE);
-  const old = await cache.match(APP_URL);
-  const oldText = old ? await old.text() : null;
-  if (oldText === fresh.text) return 'current';
-  await cache.put(APP_URL, htmlResponse(fresh.text, fresh.res));
-  if (oldText === null) return 'current';                        // aucune copie précédente : rien à annoncer
-  await notifyClients({ event: 'update-ready', version: versionOf(fresh.text) });
+  const used = await cache.match(APP_URL);
+  const usedText = used ? await used.text() : null;
+  if (usedText === null){                                        // aucune copie à protéger : on enregistre la page
+    await cache.put(APP_URL, htmlResponse(fresh.text, fresh.res));
+    await cache.delete(PENDING_URL);
+    return 'current';
+  }
+  if (usedText === fresh.text){                                  // le serveur est (revenu) à la version utilisée : rien n'attend plus
+    await cache.delete(PENDING_URL);
+    return 'current';
+  }
+  const waiting = await waitingApp(cache);
+  if (!waiting || waiting.text !== fresh.text) await cache.put(PENDING_URL, htmlResponse(fresh.text, fresh.res));
+  await notifyClients({ event: 'update-ready', version: versionOf(fresh.text) });    // rappelée à chaque vérification : la page, elle, ne l'affiche qu'une fois
   return 'updated';
+}
+
+// La version mise de côté, s'il y en a une : { text, version } (sinon null)
+async function waitingApp(cache){
+  const hit = await cache.match(PENDING_URL);
+  const text = hit ? await hit.text() : null;
+  return text === null ? null : { text, version: versionOf(text) };
+}
+
+// Le musicien a accepté : la version mise de côté devient celle qu'on sert. Résultat : 'applied' | 'none' | 'invalid'
+async function applyWaiting(){
+  const cache = await caches.open(CACHE);
+  const hit = await cache.match(PENDING_URL);
+  if (!hit) return 'none';
+  const text = await hit.text();
+  const genuine = isGenuineApp(hit, text);
+  if (genuine) await cache.put(APP_URL, htmlResponse(text, hit));
+  await cache.delete(PENDING_URL);
+  return genuine ? 'applied' : 'invalid';
+}
+
+// Une copie déjà utilisée sur cet appareil par une version précédente du service worker (autre numéro de cache) ?
+async function previousCopy(){
+  const rank = (name) => parseInt(name.slice(PREFIX.length), 10) || 0;
+  const names = (await caches.keys()).filter(n => n.indexOf(PREFIX) === 0 && n !== CACHE).sort((a, b) => rank(b) - rank(a));
+  for (const name of names){
+    const hit = await (await caches.open(name)).match(APP_URL);
+    if (hit) return hit;
+  }
+  return null;
 }
 
 async function cachedStatus(){
   const cache = await caches.open(CACHE);
   const hit = await cache.match(APP_URL);
   const text = hit ? await hit.text() : '';
-  return { event: 'status', cache: CACHE, hasApp: !!hit, version: versionOf(text) };
+  const waiting = await waitingApp(cache);
+  return { event: 'status', cache: CACHE, hasApp: !!hit, version: versionOf(text), pending: !!waiting, pendingVersion: waiting ? waiting.version : '' };
 }
 
 const OFFLINE_PAGE = '<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
@@ -90,7 +132,17 @@ self.addEventListener('install', (event) => {
   event.waitUntil((async () => {
     const { res, text } = await fetchApp();                   // page absente ou invalide : l'installation échoue, rien n'est à moitié en place
     const cache = await caches.open(CACHE);
-    await cache.put(APP_URL, htmlResponse(text, res));
+    // Une copie est déjà utilisée sur cet appareil (mise à jour de sw.js lui-même) : elle reste celle qu'on sert, la page du
+    // serveur est mise de côté comme n'importe quelle nouvelle version. Première installation : on enregistre la page.
+    const used = (await cache.match(APP_URL)) || (await previousCopy());
+    if (used){
+      const usedText = await used.text();
+      await cache.put(APP_URL, htmlResponse(usedText, used));
+      if (usedText !== text) await cache.put(PENDING_URL, htmlResponse(text, res));
+      else await cache.delete(PENDING_URL);
+    } else {
+      await cache.put(APP_URL, htmlResponse(text, res));
+    }
     await Promise.all(ASSET_URLS.map(async (url) => {
       try {
         const r = await fetch(url, { cache: 'reload' });
@@ -147,13 +199,18 @@ async function serveAsset(req){
   return res;
 }
 
-// Messages de la page : état, vérification manuelle, activation d'une nouvelle version du service worker.
+// Messages de la page : état, vérification manuelle, acceptation d'une nouvelle version (et activation d'un nouveau service worker).
 self.addEventListener('message', (event) => {
   const data = event.data || {};
   const port = event.ports && event.ports[0];
   const reply = (payload) => { if (port) port.postMessage(payload); else if (event.source) event.source.postMessage(Object.assign({ musicapp: MSG }, payload)); };
-  if (data.type === 'skip-waiting'){
-    self.skipWaiting();
+  if (data.type === 'skip-waiting' || data.type === 'apply-update'){
+    // « apply-update » : le musicien a accepté la version mise de côté. « skip-waiting » : pareil, et un nouveau service worker
+    // en attente prend la main, après avoir mis cette version en place.
+    event.waitUntil(applyWaiting().catch(() => 'none').then((result) => {
+      if (data.type === 'skip-waiting') self.skipWaiting();
+      reply({ event: 'applied', result });
+    }));
   } else if (data.type === 'status'){
     event.waitUntil(cachedStatus().then(reply).catch(() => reply({ event: 'status', hasApp: false })));
   } else if (data.type === 'check'){

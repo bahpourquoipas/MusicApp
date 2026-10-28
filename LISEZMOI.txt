@@ -1,10 +1,11 @@
-MusicApp 4.0 — prompteur de scène pour musiciens
+MusicApp 5.0 — prompteur de scène pour musiciens
 =================================================
 
 Paroles et accords qui défilent, playlists, transposition, métronome, partage de fiches et de sets,
-import EasyZic, liens Spotify / Apple Music.
-Tout reste sur l'appareil : aucun compte, aucun service en ligne (sauf si VOUS demandez la création d'une
-playlist Spotify, voir le point 3). Interface en français.
+import EasyZic, conversion des grilles copiées sur le web, liens Spotify / Apple Music et, en option,
+des sets partagés avec le groupe.
+Tout reste sur l'appareil : aucun compte, aucun service en ligne, SAUF ce que VOUS décidez d'activer
+(Google Drive, playlist Spotify, équipe : points 3 et 4). Interface en français.
 
 
 CE QUE CONTIENT LE DOSSIER
@@ -16,7 +17,7 @@ CE QUE CONTIENT LE DOSSIER
   icon-maskable-512.png,
   apple-touch-icon.png         les icônes
   LISEZMOI.txt                 ce fichier
-(Les tests automatiques, test-setlist.js, sont fournis à part : voir le point 7.)
+(Le code source et les tests automatiques sont fournis à part, dans MusicApp-v5-sources.zip : point 8.)
 
 
 1. UTILISER L'APPLI SANS RÉSEAU (à faire une fois, chez vous, avec Internet)
@@ -50,26 +51,43 @@ Hébergement gratuit avec GitHub Pages :
     Pour essayer la création d'une playlist Spotify en local, utilisez plutôt http://127.0.0.1:8000 :
     Spotify refuse « localhost » comme adresse de redirection.
 
-Mises à jour : remplacez index.html (et sw.js s'il est fourni) dans le dépôt. À la prochaine ouverture avec
-réseau, l'appli propose « Recharger » ; rien ne se recharge tout seul pendant un morceau, et vos données
-ne sont jamais touchées. Si vous ajoutez un fichier à la liste de sw.js, changez le numéro de CACHE
-(ligne « const CACHE = PREFIX + '1' »).
+Mises à jour (nouveau en version 5) : remplacez index.html et sw.js dans le dépôt (de la version 4 à la 5, ce sont
+les deux seuls fichiers qui changent ; les icônes et le manifeste restent identiques).
+À la prochaine ouverture avec réseau, la nouvelle version est téléchargée en coulisse et MISE DE CÔTÉ :
+une pastille apparaît sur la roue dentée des Réglages et un message propose « Recharger ». Tant que vous
+ne touchez à rien, la version que vous avez répétée reste celle qui sert : ni en plein morceau, ni au
+lancement suivant, ni juste avant de monter sur scène. Vos données ne sont jamais touchées par une mise à
+jour. Après avoir rechargé, fermez les anciens onglets ou fenêtres de l'appli encore ouverts.
+Si vous ajoutez un fichier à la liste de sw.js, changez le numéro de CACHE (ligne « const CACHE = PREFIX + '1' »).
 
 
-2. LES NOUVEAUTÉS DE LA VERSION 4
+2. LES NOUVEAUTÉS DE LA VERSION 5
 ---------------------------------
-  1. Import avec sélection. Un export EasyZic (.ezp), une sauvegarde, une playlist partagée ou une fiche ChordPro
-     passent par un écran d'import : chaque chanson est « Nouvelle », « Déjà chez vous » ou « Différente ».
-     Vous décochez ce que vous ne voulez pas, vous choisissez pour chaque chanson différente (garder la
-     vôtre, mettre à jour, garder les deux), vous décidez de créer ou non la playlist. Rien n'est ajouté avant
-     votre accord et « Annuler » défait tout l'import. « Tout remplacer… » restaure une sauvegarde à l'identique.
-  2. Écouter un titre sur Spotify ou Apple Music. L'icône casque (liste, menu ⋯, éditeur) ouvre le titre : lien
-     exact si vous l'avez collé (Partager → Copier le lien dans Spotify / Apple Music), sinon une recherche
-     « titre + artiste ». Le lien est enregistré avec la chanson (copie, fusion de doublons, sauvegarde, fichier
-     de set, QR code et lien de partage).
-  3. Écouter toute la setlist. Dans une playlist : icône casque à côté de son nom, ou Outils → Écouter cette
-     playlist. Voir le point 3 ci-dessous.
-  En plus : une section d'aide intégrée (bouton « ? ») pour chacune de ces fonctions.
+  1. Mode Équipe (facultatif). Les musiciens d'un groupe s'envoient des sets par une petite base en ligne
+     que VOUS créez (Supabase, offre gratuite à la date de rédaction) : « Envoyer à l'équipe »,
+     « Récupérer un set ». Une fenêtre de configuration guide la mise en place pas à pas : adresse et clé
+     du projet collées d'un coup, script SQL à copier, vérification en un clic, invitation par QR code.
+     Rien ne part et rien ne se synchronise tout seul ; la récupération passe par l'écran d'import
+     habituel. Voir le point 4, et surtout ses limites.
+  2. Chansons copiées d'un site web (boiteachansons.net…). Le bouton « Convertir » de l'éditeur (ou le message
+     qui le propose au collage) range une grille copiée sur le web : repères de section, accords répartis
+     entre crochets sur la ligne. Rien ne change sans votre accord, « Annuler » rétablit le texte, convertir une
+     deuxième fois ne change rien de plus. Le placement des accords est une ESTIMATION (le site a écrasé les
+     espaces qui les plaçaient) : vérifiez-le à l'oreille.
+  3. Bibliothèque plus solide. Les chansons vivent dans une base du navigateur (IndexedDB) en plus de
+     la copie habituelle : plus de limite d'environ 5 Mo, et une copie écrite aussitôt à chaque modification.
+     Le texte en cours de saisie dans l'éditeur est gardé comme brouillon : après une fermeture brutale,
+     un message « Brouillon retrouvé » propose de le reprendre. Si la bibliothèque change dans une fenêtre,
+     les autres fenêtres ouvertes sur le même appareil reprennent la dernière version au lieu de l'écraser.
+     Rien à faire pour en profiter : vos données sont reprises telles quelles à la première ouverture.
+  4. Mises à jour à votre rythme (voir le point 1).
+  5. Prompteur : le défilement a été mesuré à 60 images par seconde, sans image perdue, dans un Chromium
+     sans écran ralenti 4 fois. Ce n'est pas une mesure sur votre tablette : essayez-le sur la vôtre.
+  6. Pour qui développe : le code est découpé en modules et se compile en un seul fichier (point 8).
+  En plus : l'aide intégrée (bouton « ? ») décrit chacune de ces fonctions.
+
+(La version 4 apportait : l'import avec sélection, les liens Spotify / Apple Music par chanson et la
+playlist d'écoute de la setlist. Ils sont décrits au point 3.)
 
 
 3. UNE PLAYLIST SPOTIFY ET UNE PLAYLIST APPLE MUSIC POUR CHAQUE SETLIST
@@ -111,8 +129,97 @@ Option avancée : créer la playlist directement dans votre compte Spotify.
   aucun n'a été contacté pendant le développement.
 
 
-4. PARTAGER UN SET (en deux minutes)
-------------------------------------
+4. PARTAGER LES SETS AVEC LE GROUPE : LE MODE ÉQUIPE (FACULTATIF)
+-----------------------------------------------------------------
+À quoi ça sert : un musicien prépare le set, les autres le récupèrent sur leur appareil, même s'ils ne sont
+pas au même endroit. Sans ce mode, MusicApp ne change pas : il n'envoie rien sur Internet de lui-même.
+
+Ce que fait l'appli : chaque set envoyé devient une ligne dans VOTRE base Supabase (PostgreSQL). Les échanges
+se font directement entre l'appareil et Supabase : MusicApp n'a aucun serveur. Il parle à l'interface REST du
+projet, sans la bibliothèque supabase-js (qui alourdirait l'appli et ne marcherait pas hors ligne).
+Coût : d'après les pages de Supabase consultées en octobre 2026, la formule « Free » comprend 2 projets actifs
+et 500 Mo de base de données par projet, très au-delà de l'usage d'un groupe ; en revanche un projet gratuit
+resté une semaine sans activité est MIS EN PAUSE (voir les limites). Ces conditions sont celles de Supabase et
+peuvent changer : vérifiez-les sur supabase.com/pricing au moment de créer le compte.
+
+Mise en place (une seule fois, par un seul musicien, environ 10 minutes). Dans MusicApp : Réglages → Équipe →
+« Configurer l'équipe… ». La fenêtre reprend ces étapes et les vérifie pour vous :
+  a. supabase.com → « Start your project » : créez un compte (formule Free).
+  b. « New project » : un nom (celui du groupe), un mot de passe de base de données (MusicApp n'en a pas
+     besoin, gardez-le simplement) et une région en Europe. Patientez environ deux minutes.
+  c. Dans le projet, bouton « Connect » : repérez l'adresse du projet (Project URL) et la clé « Publishable
+     key » (sb_publishable_…) ; elles sont aussi dans Project Settings → API Keys. Dans MusicApp, collez
+     ce que Supabase affiche (bloc « Connect », fichier .env…) dans la zone « tout coller d'un coup » :
+     l'adresse et la clé sont reconnues toutes seules. MusicApp REFUSE les clés secrètes (sb_secret_…,
+     service_role) et ne les garde pas.
+  d. Le code d'équipe est déjà tiré dans la fenêtre (le bouton « Générer » en tire un autre). Le script SQL
+     affiché contient ce code : « Copier le script ».
+  e. Supabase → SQL Editor → « New query » → collez le script → « Run » (réponse : « Success. No rows
+     returned »). Il crée deux tables fermées à tout accès direct et quatre fonctions, seules portes d'entrée,
+     qui exigent toutes le code d'équipe. Il peut être relancé sans risque et ne supprime aucun set. Si
+     Supabase demande confirmation en parlant d'une opération « destructive », c'est à cause des lignes
+     « drop function if exists » (elles ne font que remplacer les quatre fonctions) : confirmez.
+  f. Dans MusicApp : « Vérifier la configuration ». Quatre points s'allument (le projet répond, la clé est
+     acceptée, le script est installé, le code est autorisé) ; en cas de problème, le message dit quoi
+     corriger, et le script s'ouvre si c'est lui qui manque. Puis « Enregistrer » : l'écran affiche alors
+     une INVITATION (QR code et lien).
+  g. Chaque autre musicien ouvre l'invitation (appareil photo, ou Réglages → Coller un lien) et confirme :
+     adresse, clé et code se remplissent tout seuls, il ne reste qu'à indiquer son prénom (facultatif) et à
+     vérifier la configuration.
+
+Au quotidien :
+  - Envoyer un set : ouvrir la playlist → Outils → « Envoyer cette playlist à l'équipe ». Le nom du set
+    (modifiable) l'identifie dans l'équipe. Si un set de ce nom existe déjà et que quelqu'un l'a modifié
+    depuis votre dernier échange, un AVERTISSEMENT s'affiche avant de le remplacer ; changer le nom permet de
+    garder les deux. Les sets ne sont jamais fusionnés : un set envoyé remplace le précédent.
+  - Récupérer un set : Outils → « Récupérer un set de l'équipe » (ou Réglages → Équipe). Chaque set indique son
+    auteur, son nombre de titres, sa date, et s'il est « Nouveau », « Modifié » ou « À jour ». Un toucher
+    ouvre l'écran d'import habituel : rien n'est ajouté avant votre accord, « Annuler » défait tout.
+  - Sans réseau : l'appli fonctionne comme avant. Un envoi impossible peut attendre dans Réglages → Équipe ;
+    il ne part QUE sur votre geste (« Envoyer maintenant »). S'il est en conflit avec une modification faite
+    entre-temps, il n'écrase rien : rouvrez la playlist et refaites l'envoi, l'écran montre la différence.
+  - « Quitter l'équipe » (Réglages → Équipe) efface la clé, le code et les envois en attente de CET appareil ;
+    les sets restent dans la base et les playlists ne changent pas.
+  - Votre transposition et vos vitesses de défilement ne partent jamais.
+
+LIMITES, à lire avant de s'y fier :
+  - Le CODE D'ÉQUIPE (16 signes tirés au hasard) est le seul secret. Il est impossible à deviner, mais
+    quiconque reçoit l'invitation LIT ET ÉCRIT tous les sets du groupe : il n'y a pas de comptes individuels.
+    Ne la publiez pas. Si elle circule, créez une nouvelle équipe avec un nouveau code et retirez l'ancienne
+    (voir plus bas).
+  - Les clés : MusicApp ne garde que la clé PUBLIQUE du projet (« Publishable key », ou l'ancienne clé « anon
+    public »). Elle est faite pour être dans une page web : ce n'est pas un secret. La clé SECRÈTE
+    (sb_secret_…, ou service_role) donnerait tous les droits sur votre projet : ne la mettez jamais dans
+    MusicApp ni dans une invitation (MusicApp la refuse partout).
+  - Les sets sont stockés chez Supabase, NON chiffrés. N'y mettez que ce que vous accepteriez de voir sur un
+    serveur.
+  - L'appli ne supprime jamais rien dans la base, et le script n'offre aucune fonction de suppression : pour
+    retirer un set, Supabase → Table Editor → team_sets → supprimer la ligne. Pour retirer toute l'équipe
+    (invitation diffusée, code perdu) : SQL Editor → delete from public.team_codes where code = '…'; (ses
+    sets partent avec).
+  - Le « Security Advisor » de Supabase peut signaler que ces quatre fonctions sont exécutables sans
+    connexion : c'est voulu, ce sont les portes d'entrée, protégées par le code d'équipe.
+  - Formule gratuite : un projet resté une semaine sans activité est mis en pause (Supabase prévient le
+    propriétaire par e-mail environ une semaine avant). Les données sont gardées ; « Resume project » dans le
+    tableau de bord le remet en route (jusqu'à un an après la pause, d'après la documentation de Supabase).
+    Tant qu'il est en pause, MusicApp affiche « Le projet Supabase ne répond pas » et rappelle la pause. Un
+    envoi ou une lecture de temps en temps, ou une visite du tableau de bord, évite la pause.
+  - Un set est limité à environ 900 Ko (très largement plus qu'une setlist ordinaire) ; la liste montre les
+    500 sets les plus récents.
+  - Pas de mise à jour automatique : personne n'est prévenu qu'un set a changé ; l'écran « Récupérer » le dit
+    quand on l'ouvre.
+  - HONNÊTETÉ : ce mode n'a pas été essayé contre un vrai projet Supabase hébergé. Ce qui l'a été pour de
+    vrai, sur une machine de test : le script SQL et tous les échanges de l'appli (envoi, lecture, conflits,
+    plafonds, erreurs) contre un vrai PostgreSQL 17 et un vrai PostgREST (versions 12.2.12 et 14.2), les deux
+    logiciels sur lesquels repose l'API de Supabase, avec les rôles et les droits de Supabase. Ce qui est resté
+    SIMULÉ, d'après la documentation : la passerelle de Supabase (contrôle de la clé « sb_publishable_ »,
+    autorisations du navigateur « CORS »), le tableau de bord et le réseau. Le comportement réel peut donc
+    différer sur un détail. Faites un premier essai à deux appareils, avec un set de 3 titres, avant le jour J ;
+    le bouton « Vérifier la configuration » aide à repérer l'erreur.
+
+
+5. PARTAGER UN SET SANS BASE EN LIGNE (en deux minutes)
+-------------------------------------------------------
   Chez vous : ouvrez la playlist → icône de partage → « Envoyer… » (ou « Télécharger le fichier »).
   Le fichier s'appelle « <nom de la playlist>.musicapp.json ».
   Chez l'autre musicien : enregistrer le fichier sur l'appareil (iPhone, iPad : « Enregistrer dans Fichiers »),
@@ -122,7 +229,7 @@ Option avancée : créer la playlist directement dans votre compte Spotify.
   Pour une seule chanson, le QR code ou le lien de la fiche suffit.
 
 
-5. LIMITES CONNUES
+6. LIMITES CONNUES
 ------------------
   - La durée d'un set est une ESTIMATION tant que les durées ne sont pas saisies titre par titre
     (un « ≈ » le signale ; l'estimation se cale sur vos vraies durées dès que trois chansons en ont une).
@@ -130,15 +237,18 @@ Option avancée : créer la playlist directement dans votre compte Spotify.
     facilement. Vérifiez avant de valider.
   - Les repères automatiques ne devinent ni pont ni pré-refrain, et ne proposent rien quand aucun refrain
     ne se répète (blocs de paroles séparés par des lignes vides). Ils s'ajoutent alors à la main : {c: Pont}.
+  - La conversion d'une grille copiée sur le web place les accords à égale distance sur la ligne : c'est une
+    estimation à vérifier, pas une lecture de la chanson.
   - Le menu de partage de l'appareil (AirDrop, Messages…) dépend du navigateur : si l'appareil ne sait pas
     envoyer un fichier, le bouton « Envoyer… » n'apparaît pas et seul le téléchargement est proposé.
   - Les liens Spotify / Apple Music ne sont jamais vérifiés par l'appli (elle ne contacte pas ces services) :
     un lien collé dont le titre a disparu du catalogue ne sera découvert qu'en l'ouvrant.
   - Sur un téléphone à l'horizontale, l'éditeur de chansons et la bibliothèque restent à l'étroit
     (le prompteur, lui, est adapté).
+  - Les mesures de fluidité ont été faites dans un navigateur sans écran, pas sur une tablette réelle.
 
 
-6. RACCOURCIS (clavier ou pédale Bluetooth)
+7. RACCOURCIS (clavier ou pédale Bluetooth)
 -------------------------------------------
   Espace            démarre / arrête le défilement
   ← →               chanson précédente / suivante
@@ -149,14 +259,33 @@ Option avancée : créer la playlist directement dans votre compte Spotify.
   F                 plein écran            Échap   retour à la bibliothèque
 
 
-7. TESTS AUTOMATIQUES (facultatif, pour qui développe)
------------------------------------------------------
-  Dans un dossier contenant index.html et test-setlist.js :   npm install jsdom
-                                                              node test-setlist.js
-  Les 470 tests simulent le navigateur (jsdom) : bibliothèque, éditeur, prompteur, repères de section,
-  partage, import / export, liens d'écoute, playlist Spotify contre un faux Spotify, Drive simulé, fichiers de
-  l'installation hors ligne.
+8. POUR QUI DÉVELOPPE : SOURCES, COMPILATION, TESTS (facultatif)
+-----------------------------------------------------------------
+  MusicApp-v5-sources.zip contient le code découpé en modules (src/, 31 fichiers .js), le script SQL du mode
+  Équipe (src/team.sql), le gabarit de la page (src/template.html), les fichiers fixes (public/ : sw.js,
+  manifeste, icônes), build.js et les tests (test/).
+  Il faut Node.js 20.19 ou plus récent (22 recommandé) : jsdom, qui simule le navigateur pour les tests, l'exige.
+
+      npm install            télécharge les outils (esbuild, jsdom, PGlite…), une seule fois
+      npm run build          produit dist/ : les 7 fichiers à déposer sur GitHub Pages (index.html minifié)
+      npm test               compile une version lisible pour les tests, lance les tests dans jsdom,
+                             puis les tests du script SQL (test/test-team-sql.js)
+
+  Les tests simulent le navigateur (jsdom) : bibliothèque, éditeur, prompteur, repères de section, partage,
+  import / export, liens d'écoute, playlist Spotify contre un faux Spotify, Drive simulé, fichiers de
+  l'installation hors ligne, et le mode Équipe contre un faux Supabase (test/fake-supabase.js) : l'interface
+  REST simulée est branchée sur un vrai PostgreSQL (PGlite, PostgreSQL compilé en WebAssembly) dans lequel le
+  script src/team.sql est exécuté tel quel, sous le rôle « anon » comme le fait Supabase pour une clé publique.
+  test/test-team-sql.js essaie ce script seul sur PostgreSQL : accès direct fermé, quatre fonctions, conditions
+  d'écriture, plafonds, relances.
+  Sur demande, test/fake-supabase.js peut s'adosser à un PostgreSQL et à un PostgREST installés sur la machine
+  au lieu de PGlite (variables d'environnement TEAM_POSTGREST_URL, TEAM_PG_URL, TEAM_REAL_DIR et
+  TEAM_JWT_SECRET, décrites au début du fichier ; il faut aussi le module « pg ») : la série « équipe » a
+  été passée ainsi contre PostgreSQL 17 avec PostgREST 12.2.12, puis 14.2.
   Ce que jsdom ne peut pas vérifier (mise en page réelle, service worker, redirection de connexion Spotify,
-  menu de partage d'un iPhone) a été contrôlé séparément dans un vrai Chromium ; le menu de partage d'iOS ou
-  d'Android, et les vrais serveurs Spotify / Apple Music, n'ont pu être essayés que simulés : testez sur vos
-  propres appareils avant de compter dessus.
+  menu de partage d'un iPhone) a été contrôlé séparément dans un vrai Chromium (« node test/smoke-chromium.js »
+  fait ce contrôle sur la version compilée, service worker compris ; « node test/team-chromium.js » ouvre la
+  fenêtre de configuration de l'équipe sur un téléphone et sur un ordinateur, avec le même faux Supabase, et
+  enregistre des captures d'écran). Le menu de partage d'iOS ou d'Android, et les vrais serveurs Spotify,
+  Apple Music et Supabase, n'ont pu être essayés que simulés : testez sur vos propres appareils avant de
+  compter dessus.
