@@ -1,0 +1,52 @@
+{
+ "format": "musicapp-playlist",
+ "version": 1,
+ "app": "MusicApp 5.2.0",
+ "exportedAt": "2026-10-29T18:00:00.000Z",
+ "name": "Exemples de grilles",
+ "options": {},
+ "songs": [
+  {
+   "title": "Autumn Leaves (exemple)",
+   "artist": "Standard de jazz",
+   "style": "Jazz",
+   "singers": "",
+   "instruments": [
+    "guitare"
+   ],
+   "originalKey": "Em",
+   "bpm": 120,
+   "timeSig": "4/4",
+   "duration": 0,
+   "content": "{start_of_grid}\n|: Am7 | D7 | G7M | C7M |\n| F#m7 5b | B7 9- | Em7 | % :|\n| F#m7 5b | B7 | Em7 | % E7 |\n| Am7 | D7 | G7M | % (ou C7M) |\n| F#m7 5b | B7 | Em7~Eb7 | Dm7~Db7 |\n| C7M | B7 9+~B7 9- | Em7 | Em7 |.\n{end_of_grid}\n"
+  },
+  {
+   "title": "Cadence à reprises (exemple)",
+   "artist": "Exercice",
+   "style": "Jazz",
+   "singers": "",
+   "instruments": [
+    "guitare"
+   ],
+   "originalKey": "C",
+   "bpm": 100,
+   "timeSig": "4/4",
+   "duration": 0,
+   "content": "{c: Thème}\n{start_of_grid}\n|: C7M | A7 | Dm7 | G7 |\n|1 Em7 | A7 | Dm7 | G7 :|\n|2 C7M | % | Dm7~G7 | C7M |.\n{end_of_grid}\n"
+  },
+  {
+   "title": "Blues du lundi (exemple)",
+   "artist": "Les Démos",
+   "style": "Blues",
+   "singers": "",
+   "instruments": [
+    "guitare"
+   ],
+   "originalKey": "A",
+   "bpm": 96,
+   "timeSig": "4/4",
+   "duration": 0,
+   "content": "{c: Intro}\n{start_of_grid}\n| A7 | % | D7 | E7 |\n{end_of_grid}\n\n{c: Couplet 1}\n[A7]Lundi matin, le réveil m'a lâché\n[D7]Lundi matin, le réveil m'a [A7]lâché\n[E7]J'ai pris ma guitare, [D7]j'ai [A7]chanté jusqu'au [E7]soir\n\n{c: Refrain}\n[A7]Oh oh, c'est le blues du [D7]lundi\n[A7]Oh oh, je le [E7]chante avec mes [A7]amis\n\n{c: Solo}\n{start_of_grid}\n|: A7 | % | % | % |\n| D7 | % | A7 | % |\n| E7 | D7 | A7 D7 | A7 E7 :|\n{end_of_grid}\n\n{c: Couplet 2}\n[A7]Mardi matin, le café était froid\n[D7]Mardi matin, le café était [A7]froid\n"
+  }
+ ]
+}

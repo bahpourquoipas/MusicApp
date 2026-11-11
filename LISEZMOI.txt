@@ -1,7 +1,9 @@
-MusicApp 5.0 — prompteur de scène pour musiciens
+MusicApp 5.2 — prompteur de scène pour musiciens
 =================================================
 
-Paroles et accords qui défilent, playlists, transposition, métronome, partage de fiches et de sets,
+Paroles et accords qui défilent, grilles d'accords (une case par mesure), pédalier Bluetooth, playlists,
+transposition,
+métronome, partage de fiches et de sets,
 import EasyZic, conversion des grilles copiées sur le web, liens Spotify / Apple Music et, en option,
 des sets partagés avec le groupe.
 Tout reste sur l'appareil : aucun compte, aucun service en ligne, SAUF ce que VOUS décidez d'activer
@@ -16,8 +18,9 @@ CE QUE CONTIENT LE DOSSIER
   icon-192.png, icon-512.png,
   icon-maskable-512.png,
   apple-touch-icon.png         les icônes
+  exemples-grilles.json        trois chansons d'exemple avec grilles, à importer si vous voulez
   LISEZMOI.txt                 ce fichier
-(Le code source et les tests automatiques sont fournis à part, dans MusicApp-v5-sources.zip : point 8.)
+(Le code source et les tests automatiques sont fournis à part, dans MusicApp-v5.2-sources.zip : point 8.)
 
 
 1. UTILISER L'APPLI SANS RÉSEAU (à faire une fois, chez vous, avec Internet)
@@ -61,8 +64,86 @@ jour. Après avoir rechargé, fermez les anciens onglets ou fenêtres de l'appli
 Si vous ajoutez un fichier à la liste de sw.js, changez le numéro de CACHE (ligne « const CACHE = PREFIX + '1' »).
 
 
-2. LES NOUVEAUTÉS DE LA VERSION 5
----------------------------------
+2. LES NOUVEAUTÉS : LE PÉDALIER (5.2), LES GRILLES D'ACCORDS (5.1), PUIS LA VERSION 5
+-------------------------------------------------------------------------------------
+LE PÉDALIER BLUETOOTH (nouveau en 5.2)
+
+Un pédalier tourne-pages (AirTurn, iRig BlueTurn, PageFlip…) s'appaire comme un CLAVIER et envoie des
+touches. MusicApp sait maintenant apprendre ces touches et leur donner une action : tourner la page,
+démarrer ou arrêter le défilement, passer à la chanson ou à la partie suivante — sans lâcher l'instrument.
+
+  Mise en route, une fois :
+    a. Appairez le pédalier dans les réglages Bluetooth de la tablette (il apparaît comme un clavier).
+    b. Dans MusicApp : Réglages → Pédalier Bluetooth → cochez « Utiliser un pédalier ».
+    c. Pour chaque pédale : touchez « Apprendre », appuyez sur la pédale, choisissez son action dans la liste.
+       Une ligne d'essai affiche la touche reçue : elle dit tout de suite si le pédalier est bien appairé.
+
+  - D'usine, les deux pédales tournent la page dans le mode le plus répandu (flèches haut et bas, mode
+    d'usine de l'AirTurn PEDpro et de l'iRig BlueTurn). Page précédente / Page suivante tournent la page
+    elles aussi, sans aucun réglage.
+  - Actions proposées : page suivante, page précédente, démarrer / arrêter le défilement, chanson suivante,
+    chanson précédente, partie suivante, partie précédente, rien.
+  - Un appui bref tourne la page ; la pédale MAINTENUE fait défiler en continu (option, active d'usine).
+    Maintenir ne fait jamais défiler les chansons en rafale.
+  - Jusqu'à six pédales. Une touche ne commande qu'une seule action.
+  - Si votre pédalier a plusieurs modes, choisissez un mode CLAVIER (flèches, ou Page précédente /
+    Page suivante). Les modes « souris » et « multimédia » de certains pédaliers n'envoient pas de touches :
+    le navigateur ne les reçoit pas, MusicApp ne peut rien en faire.
+  - Les pédales agissent au prompteur, une chanson ouverte. Tant que le pédalier n'est pas activé dans les
+    Réglages, rien ne change : les flèches gardent leur rôle habituel.
+
+
+LES GRILLES D'ACCORDS (5.1)
+
+Une chanson peut contenir une GRILLE : une case par mesure, quatre mesures par rangée, comme sur une feuille
+de jazz — reprises |: :|, signe %, deux accords en diagonale, notes « (ou C7M) », première et deuxième fois,
+double barre, barre finale.
+
+  Au prompteur, le commutateur « Texte | Grille » (en haut à droite) est là pour TOUTES les chansons.
+    - Un standard écrit en grille seule s'ouvre directement en vue Grille.
+    - Une chanson qui a des paroles ET des grilles s'ouvre en Texte, la grille à sa place dans le texte ;
+      « Grille » n'affiche alors que les grilles, chacune avec le titre de sa partie.
+    - Sur une chanson sans grille, le commutateur s'écrit « Texte | + Grille » : il explique, puis
+      « Ajouter une grille » ouvre l'éditeur sur une grille d'exemple à remplacer. « Annuler » ne change rien.
+    - Le choix est retenu pour chaque chanson, comme le capo, et reste personnel : la fiche partagée n'est
+      pas modifiée.
+
+  La vue Grille est pensée pour la TABLETTE EN PAYSAGE : la grille est ajustée à l'écran, accords les plus
+  gros possible, sans défilement (donc pas de défilement automatique). Les rangées restent telles que vous
+  les avez écrites, même sur téléphone : ce sont les accords qui rapetissent. En bas : « Par ligne » (− / +)
+  pour répartir les mesures de 1 à 8 par rangée, Capo, métronome, précédent / suivant. Le capo s'applique aux
+  accords de la grille, et toucher un accord ouvre son doigté comme dans le texte.
+
+  ÉCRIRE UNE GRILLE — bouton « + Grille » de l'éditeur, puis remplacer la rangée d'exemple :
+
+      {start_of_grid}                       (ou {sog})
+      |: Am7 | D7 | G7M | C7M :|
+      | F#m7 5b | B7 9- | Em7 | % |
+      | Am7 | D7 | G7M | C7M (ou G6) |
+      {end_of_grid}                         (ou {eog})
+
+    - Une ligne = une rangée. Le signe | sépare les mesures (les barres du bord sont facultatives).
+    - Un accord = la case entière. Deux accords = la case coupée en diagonale. Trois ou quatre se partagent
+      la case.
+    - %  mesure répétée       .  case vide       N.C.  x2  texte libre, affiché tel quel
+    - (ou C7M)  note écrite sous l'accord ; elle suit le capo.
+    - |:  début de reprise    :|  fin de reprise    ||  double barre    |.  barre finale
+      |1  première fois       |2  deuxième fois     (:|2 ferme la reprise et ouvre la deuxième fois)
+    - Notation française comprise : « Gbm7 5b » donne Gbm7b5, « B7 9+ » donne B7#9, « B7 9- » donne B7b9.
+    - Un repère {c: Solo} posé à l'intérieur coupe la grille en deux blocs, le second avec son titre.
+    - Une ligne qui commence par # reste un commentaire invisible sur scène.
+
+  Une grille est du TEXTE dans la fiche : elle voyage avec la chanson (sauvegarde, partage par lien ou par
+  fichier, équipe, duplication) et ses accords servent à détecter la tonalité. À l'impression, une fiche qui
+  n'est qu'une grille sort sur une seule colonne, en plus gros. Les versions antérieures à la 5.1 affichent
+  {start_of_grid} comme du texte : mettez à jour les appareils du groupe avant d'échanger des fiches à grille.
+
+  POUR ESSAYER TOUT DE SUITE : le fichier exemples-grilles.json (Réglages → Importer) ajoute trois chansons —
+  Autumn Leaves, une cadence avec première et deuxième fois, un blues avec paroles et grilles. La chanson de
+  démonstration du premier lancement contient elle aussi une petite grille.
+
+
+CE QU'AVAIT APPORTÉ LA VERSION 5
   1. Mode Équipe (facultatif). Les musiciens d'un groupe s'envoient des sets par une petite base en ligne
      que VOUS créez (Supabase, offre gratuite à la date de rédaction) : « Envoyer à l'équipe »,
      « Récupérer un set ». Une fenêtre de configuration guide la mise en place pas à pas : adresse et clé
@@ -245,11 +326,26 @@ LIMITES, à lire avant de s'y fier :
     un lien collé dont le titre a disparu du catalogue ne sera découvert qu'en l'ouvrant.
   - Sur un téléphone à l'horizontale, l'éditeur de chansons et la bibliothèque restent à l'étroit
     (le prompteur, lui, est adapté).
+  - Les grilles ne s'écrivent pas toutes seules : « + Grille » pose les balises et peut entourer les lignes
+    sélectionnées, mais la mise en mesures reste à faire à la main.
+  - « Par ligne » redistribue toutes les mesures d'un bloc en rangées égales : tant que le réglage est actif,
+    une structure en rangées irrégulières n'est pas conservée (revenir à la valeur d'origine la rétablit).
+  - Sur un téléphone à la verticale, une grille de jazz à quatre mesures par rangée donne des accords petits
+    (de l'ordre de 15 px) : « Par ligne − » permet de passer à 3 ou à 2 pour cette chanson.
+  - Dans une grille, le crochet de première et deuxième fois est dessiné sur la première mesure de la fin,
+    pas sur toutes.
+  - Le pédalier n'est reconnu que s'il envoie des TOUCHES : un pédalier réglé en mode « souris » ou en mode
+    « multimédia » (lecture / pause, titre suivant) ne commande rien, le navigateur ne reçoit pas ces codes.
+  - Quand le pédalier est activé, les touches apprises ne servent plus à leur usage habituel au prompteur
+    (d'usine, les flèches haut et bas tournent la page au lieu de faire un petit pas).
+  - Le pédalier n'a pas été essayé sur un vrai appareil Bluetooth : les touches ont été envoyées par un
+    navigateur réel, comme le ferait un clavier. Essayez le vôtre avant le premier concert.
   - Les mesures de fluidité ont été faites dans un navigateur sans écran, pas sur une tablette réelle.
 
 
 7. RACCOURCIS (clavier ou pédale Bluetooth)
 -------------------------------------------
+  (Avec un pédalier réglé — point 2 —, c'est son réglage qui commande : les touches apprises passent avant.)
   Espace            démarre / arrête le défilement
   ← →               chanson précédente / suivante
   ↑ ↓               défilement à la main
@@ -261,7 +357,7 @@ LIMITES, à lire avant de s'y fier :
 
 8. POUR QUI DÉVELOPPE : SOURCES, COMPILATION, TESTS (facultatif)
 -----------------------------------------------------------------
-  MusicApp-v5-sources.zip contient le code découpé en modules (src/, 31 fichiers .js), le script SQL du mode
+  MusicApp-v5.2-sources.zip contient le code découpé en modules (src/, 33 fichiers .js), le script SQL du mode
   Équipe (src/team.sql), le gabarit de la page (src/template.html), les fichiers fixes (public/ : sw.js,
   manifeste, icônes), build.js et les tests (test/).
   Il faut Node.js 20.19 ou plus récent (22 recommandé) : jsdom, qui simule le navigateur pour les tests, l'exige.
@@ -272,8 +368,8 @@ LIMITES, à lire avant de s'y fier :
                              puis les tests du script SQL (test/test-team-sql.js)
 
   Les tests simulent le navigateur (jsdom) : bibliothèque, éditeur, prompteur, repères de section, partage,
-  import / export, liens d'écoute, playlist Spotify contre un faux Spotify, Drive simulé, fichiers de
-  l'installation hors ligne, et le mode Équipe contre un faux Supabase (test/fake-supabase.js) : l'interface
+  import / export, liens d'écoute, grilles d'accords, pédalier, playlist Spotify contre un faux Spotify, Drive simulé,
+  fichiers de l'installation hors ligne, et le mode Équipe contre un faux Supabase (test/fake-supabase.js) : l'interface
   REST simulée est branchée sur un vrai PostgreSQL (PGlite, PostgreSQL compilé en WebAssembly) dans lequel le
   script src/team.sql est exécuté tel quel, sous le rôle « anon » comme le fait Supabase pour une clé publique.
   test/test-team-sql.js essaie ce script seul sur PostgreSQL : accès direct fermé, quatre fonctions, conditions
