@@ -1,14 +1,12 @@
-MusicApp 6 — prompteur de scène pour musiciens
-===============================================
+MusicApp 6.1 — prompteur de scène pour musiciens
+=================================================
 
-Paroles et accords qui défilent, karaoké (votre musique, paroles synchronisées, voix réduite), grilles d'accords
-(une case par mesure), pédalier Bluetooth, playlists,
-transposition,
-métronome, partage de fiches et de sets,
-import EasyZic, conversion des grilles copiées sur le web, liens Spotify / Apple Music et, en option,
-des sets partagés avec le groupe.
-Tout reste sur l'appareil : aucun compte, aucun service en ligne, SAUF ce que VOUS décidez d'activer
-(Google Drive, playlist Spotify, équipe : points 3 et 4). Interface en français.
+Paroles et accords qui défilent, ligne en cours en surbrillance, paroles minutées (LRCLIB), grilles d'accords
+(une case par mesure), pédalier Bluetooth, playlists, transposition, métronome, partage de fiches et de sets,
+import EasyZic, conversion des grilles copiées sur le web, liens d'écoute Spotify / Apple Music par chanson et,
+en option, des sets partagés avec le groupe.
+Tout reste sur l'appareil : aucun compte, aucun service en ligne, SAUF ce que VOUS demandez (recherche LRCLIB,
+équipe : point 4). Interface en français.
 
 
 CE QUE CONTIENT LE DOSSIER
@@ -21,7 +19,7 @@ CE QUE CONTIENT LE DOSSIER
   apple-touch-icon.png         les icônes
   exemples-grilles.json        trois chansons d'exemple avec grilles, à importer si vous voulez
   LISEZMOI.txt                 ce fichier
-(Le code source et les tests automatiques sont fournis à part, dans MusicApp-v6-sources.zip : point 8.)
+(Le code source et les tests automatiques sont fournis à part, dans MusicApp-v6.1-sources.zip : point 8.)
 
 
 1. UTILISER L'APPLI SANS RÉSEAU (à faire une fois, chez vous, avec Internet)
@@ -52,10 +50,8 @@ Hébergement gratuit avec GitHub Pages :
     sur l'écran d'accueil n'est pas concernée. Exportez une sauvegarde de temps en temps.
   - Essai sans GitHub : dans le dossier, lancez « python3 -m http.server 8000 » puis ouvrez
     http://localhost:8000 (localhost est accepté comme une adresse https pour le mode hors ligne).
-    Pour essayer la création d'une playlist Spotify en local, utilisez plutôt http://127.0.0.1:8000 :
-    Spotify refuse « localhost » comme adresse de redirection.
 
-Mises à jour : remplacez index.html et sw.js dans le dépôt (de la version 5.2 à la 6, ce sont les deux seuls
+Mises à jour : remplacez index.html et sw.js dans le dépôt (de la version 5.2 à la 6.1, ce sont les deux seuls
 fichiers qui changent ; les icônes et le manifeste restent identiques).
 À la prochaine ouverture avec réseau, la nouvelle version est téléchargée en coulisse et MISE DE CÔTÉ :
 une pastille apparaît sur la roue dentée des Réglages et un message propose « Recharger ». Tant que vous
@@ -65,66 +61,58 @@ jour. Après avoir rechargé, fermez les anciens onglets ou fenêtres de l'appli
 Si vous ajoutez un fichier à la liste de sw.js, changez le numéro de CACHE (ligne « const CACHE = PREFIX + '1' »).
 
 
-2. LES NOUVEAUTÉS : LA VERSION 6, PUIS LE PÉDALIER (5.2), LES GRILLES D'ACCORDS (5.1) ET LA VERSION 5
----------------------------------------------------------------------------------------------------
+2. LES NOUVEAUTÉS : LA VERSION 6.1, LA VERSION 6, PUIS LE PÉDALIER (5.2), LES GRILLES (5.1) ET LA VERSION 5
+-----------------------------------------------------------------------------------------------------------
 
-LA VERSION 6 : CORRECTIONS, KARAOKÉ, VOIX
-=========================================
+LA VERSION 6.1 : RETOUR AUX FONDAMENTAUX
+========================================
 
-A. Corrections (vérifiées sur une vraie bibliothèque de 115 chansons)
+A. Ce qui a été retiré (trop lourd pour ce que ça apportait)
+  - La connexion à Google Drive. À la place, Réglages → Exporter : sur iPad, le fichier s'enregistre où vous
+    voulez (Fichiers, iCloud Drive, ou Google Drive si l'appli Drive est installée). Pour restaurer,
+    Réglages → Importer, et choisissez le fichier au même endroit.
+  - Le karaoké avec fichier audio, la voix réduite et la piste instrumentale. Les fichiers audio déjà attachés
+    sont effacés de l'appareil au démarrage, pour rendre la place.
+  - La fenêtre « Écouter la setlist » (copie de liens, liste pour Apple Music, CSV) et la création de playlist
+    Spotify. Le casque de chaque CHANSON reste : il ouvre le titre dans Spotify ou Apple Music.
+
+B. Suivre les paroles, sans fichier audio
+  1. La ligne en cours. Pendant que le texte défile, la ligne de paroles qui passe le premier tiers de l'écran
+     s'allume. Rien à préparer, pour toutes les chansons. Réglages → Prompteur pour la couper.
+  2. Ligne par ligne. Touche Entrée (Maj + Entrée pour revenir), ou une pédale réglée sur « Ligne suivante »
+     (Réglages → Pédalier) : la ligne suivante monte au premier tiers de l'écran. C'est vous qui menez.
+  3. Les paroles minutées. Bouton micro du prompteur → « Paroles minutées » :
+       - « Chercher sur LRCLIB » : une base ouverte de paroles minutées, consultée par Internet au moment où vous
+         touchez le bouton, avec le titre et l'artiste de la fiche ;
+       - « Fichier .lrc… » : un fichier de paroles minutées ;
+       - « Minuter en écoutant » : lancez l'enregistrement sur un autre appareil, touchez Lecture au même moment,
+         puis « Ligne suivante » (ou Espace, Entrée, la pédale) au début de chaque ligne.
+     Seuls les TEMPS sont repris et posés sur VOS paroles ; votre texte n'est jamais remplacé.
+     À Lecture, une chanson minutée se déroule toute seule, au tempo de l'enregistrement original. Si le groupe
+     joue plus vite ou plus lentement, appuyez sur « Ligne suivante » (pédale ou Entrée) au début d'une ligne :
+     les paroles se recalent sur la ligne la plus proche, et d'un appui à l'autre l'appli apprend votre tempo.
+     « Effacer » rend à la chanson son défilement habituel. Le minutage voyage avec la fiche (sauvegarde,
+     partage, fichier de playlist) ; le mode Équipe ne le transporte pas.
+     LIMITE : le vrai service LRCLIB n'a pas pu être essayé d'ici (il n'est pas joignable depuis mon
+     environnement) : il a été essayé contre une imitation. Faites un premier essai chez vous.
+
+C. Plus léger : l'appli passe de 556 Ko à 496 Ko, et il n'y a plus rien à configurer.
+
+
+LA VERSION 6 : CORRECTIONS
+==========================
+
+Corrections vérifiées sur une vraie bibliothèque de 115 chansons :
   - Lignes d'accords mieux reconnues : notation française (« C/4 » = Csus4, « G/5+ »…), accords suivis d'une
-    annotation (« x2 », « bis », « stop »), accords précédés d'un tiret. 48 lignes d'accords qui s'affichaient
-    comme des paroles sont maintenant reconnues ; aucune ligne de paroles n'est prise pour des accords.
+    annotation (« x2 », « bis », « stop »), accords précédés d'un tiret.
   - Mesures écrites à la main (« | G | G | C | D | ») : à l'import EasyZic elles deviennent une vraie grille.
     POUR LES FICHES DÉJÀ IMPORTÉES : réimportez le fichier EasyZic (« remplacer »), ou, dans l'éditeur,
     sélectionnez les lignes de mesures et touchez « + Grille ».
-  - Titres EasyZic « TITRE- Artiste » : l'artiste est maintenant séparé du titre.
+  - Titres EasyZic « TITRE- Artiste » : l'artiste est séparé du titre.
   - Transposition : bémols ou dièses selon la tonalité d'arrivée (en Fa on lit Bb, plus A#).
-  - Barres du prompteur (Réglages → Prompteur) : l'essai est intégré. Quand les barres s'effacent, un petit
-    bouton Pause reste dans le coin de l'écran : on peut toujours arrêter d'un seul geste.
-  - Textes secondaires plus lisibles (contraste relevé).
-
-B. Karaoké : votre musique, et les paroles qui la suivent
-  Au prompteur, touchez le bouton MICRO (à côté du métronome).
-  1. « Choisir un fichier audio… » : un fichier à vous (MP3, M4A, WAV…, 80 Mo au plus). Une barre audio
-     apparaît au-dessus des commandes ; Lecture lance la musique ET le texte. Sans synchronisation, le texte
-     défile à sa vitesse habituelle.
-  2. Pour que le texte suive la musique LIGNE À LIGNE, synchronisez une fois, au choix :
-       - « Synchroniser en écoutant » : lancez la musique, puis touchez « Ligne suivante » (ou Espace, Entrée,
-         ou la pédale) au début de chaque ligne chantée. « Reculer » refait la dernière ligne. Comptez la
-         durée de la chanson, une seule fois.
-       - « Fichier .lrc… » : un fichier de paroles horodatées.
-       - « Chercher sur LRCLIB » : une base ouverte et gratuite de paroles horodatées (lrclib.net), consultée
-         par Internet au moment où vous touchez le bouton, avec le titre et l'artiste de la fiche.
-     Dans les deux derniers cas, SEULS LES TEMPS sont repris et posés sur VOS paroles (les lignes qui se
-     ressemblent) : votre texte n'est jamais remplacé, les lignes qui ne correspondent à rien restent sans temps.
-  3. « Tempo » (barre audio) : 100 % à 50 %, sans changer la hauteur — pour travailler un passage.
-  La ligne chantée est surlignée et se tient dans le haut de l'écran. Toucher le texte met en pause, comme avant.
-
-C. Sans la voix
-  - « Voix : Réduite » (barre audio) : immédiat, sans préparation. L'appli retire ce qui est identique à gauche
-    et à droite — la voix principale, presque toujours — et garde les graves. Sur un mixage stéréo classique la
-    voix baisse beaucoup ; elle ne disparaît pas toujours (réverbération, voix doublées), les chœurs placés sur
-    les côtés restent, le son devient mono, et un enregistrement MONO devient presque muet.
-  - « Voix : Instrumentale » : pour un résultat net, séparez la chanson avec un outil d'IA (VocalCut, par
-    exemple), puis attachez le fichier obtenu : micro → « Choisir une piste instrumentale… ». L'appli passe de
-    l'une à l'autre au même endroit de la chanson.
-  - POURQUOI LA SÉPARATION PAR IA N'EST PAS DANS L'APPLI : elle demande un modèle d'environ 170 Mo à télécharger,
-    plusieurs minutes de calcul par chanson sur une tablette, et des réglages de serveur que GitHub Pages ne
-    permet pas. Je n'ai pas pu la faire fonctionner ni la vérifier d'ici : je ne livre pas ce que je n'ai pas vu
-    marcher.
-
-D. À savoir
-  - Les fichiers audio restent sur L'APPAREIL où vous les avez choisis : ils ne sont ni dans les sauvegardes, ni
-    dans les partages, ni dans l'équipe (à rattacher sur chaque appareil). La synchronisation, elle, fait partie
-    de la fiche : sauvegarde, lien de partage, fichier de playlist. Le mode Équipe ne la transporte pas encore.
-  - Si vous modifiez le texte d'une chanson synchronisée, chaque ligne garde son temps ; une ligne réécrite le
-    perd (à resynchroniser).
-  - Une chanson supprimée : ses fichiers audio sont retirés de l'appareil au démarrage suivant.
-  - Le changement de tonalité de la musique (transposer l'audio) n'est pas fait.
-  - CE QUI N'A PAS PU ÊTRE ESSAYÉ D'ICI : le vrai service LRCLIB (essayé contre une imitation : le site n'est
-    pas joignable depuis mon environnement) ; un vrai iPad ou iPhone (essais faits dans Chromium, avec un fichier
-    WAV de synthèse) — à vérifier chez vous : lecture d'un MP3/M4A, « Voix : Réduite », tempo ralenti.
+  - Barres du prompteur (Réglages → Prompteur) : quand elles s'effacent, un petit bouton Pause reste à l'écran.
+  - Textes secondaires plus lisibles.
+  - 6.0.1 et 6.0.2 : l'appli fonctionne sur les anciens iPad (iOS 12, iPad mini 2) : voir le point 6.
 
 LE PÉDALIER BLUETOOTH (5.2)
 
@@ -227,47 +215,15 @@ CE QU'AVAIT APPORTÉ LA VERSION 5
   6. Pour qui développe : le code est découpé en modules et se compile en un seul fichier (point 8).
   En plus : l'aide intégrée (bouton « ? ») décrit chacune de ces fonctions.
 
-(La version 4 apportait : l'import avec sélection, les liens Spotify / Apple Music par chanson et la
-playlist d'écoute de la setlist. Ils sont décrits au point 3.)
+(La version 4 apportait l'import avec sélection et les liens Spotify / Apple Music par chanson.)
 
 
-3. UNE PLAYLIST SPOTIFY ET UNE PLAYLIST APPLE MUSIC POUR CHAQUE SETLIST
-------------------------------------------------------------------------
-Ce qui marche tout de suite, sans compte ni réglage (MusicApp ne contacte aucun service) :
-  - Chaque titre de la setlist s'ouvre dans Spotify / Apple Music, dans l'ordre du set.
-  - Spotify : « Copier N liens » met les adresses des titres dans le presse-papiers. Dans l'appli Spotify pour
-    ordinateur : ouvrir une playlist, cliquer dans la liste des titres, coller (Ctrl+V ou ⌘V).
-    Ce raccourci de Spotify marche le plus souvent mais n'est pas garanti par Spotify.
-  - Apple Music : « Copier la liste Artiste - Titre » ou « Télécharger en CSV », puis un service de transfert de
-    playlists (TuneMyMusic, Soundiiz…) crée la playlist dans Apple Music. Vérifiez ensuite chaque titre.
-    Apple ne permet pas à une appli de créer une playlist sans un compte développeur payant : c'est la
-    raison de ce détour, il n'existe pas de bouton « Créer sur Apple Music » honnête sans ce compte.
-  - Une fois la playlist créée, collez son lien dans la fenêtre : il reste attaché à la setlist (le casque de la
-    playlist devient ambre) et voyage avec le fichier de la playlist et la sauvegarde.
-
-Option avancée : créer la playlist directement dans votre compte Spotify.
-  Spotify n'autorise une appli à écrire dans un compte qu'avec une « appli développeur » à votre nom. Elle se
-  crée gratuitement, mais son propriétaire doit avoir un abonnement Spotify Premium actif.
-  a. MusicApp doit être ouverte depuis une adresse https (GitHub Pages) ou http://127.0.0.1 : jamais depuis un
-     fichier ni depuis « localhost ».
-  b. Dans la fenêtre « Créer la playlist sur Spotify », suivez les 4 étapes : developer.spotify.com/dashboard →
-     « Create app » → déclarer l'adresse de redirection que MusicApp affiche (bouton Copier) → cocher « Web API »
-     → copier le « Client ID » de l'appli et le coller dans MusicApp. Le Client ID n'est pas un secret.
-  c. « Se connecter à Spotify » : la connexion se fait sur la page de Spotify (aucun mot de passe ne passe par
-     MusicApp). Les jetons de connexion restent sur l'appareil : ni dans les sauvegardes, ni dans les partages,
-     ni sur Google Drive. « Se déconnecter » les efface.
-  d. MusicApp cherche chaque titre et affiche un écran de vérification : pour chaque titre, une pastille
-     (« Lien enregistré », « Trouvé », « À vérifier », « Introuvable »), la liste des versions possibles à choisir,
-     et une case à décocher. La playlist n'est créée qu'après votre accord, dans l'ordre du set. Vous pouvez
-     fermer la fenêtre pendant la création.
-  Si Spotify refuse (appli en « mode développement » limitée à quelques comptes déclarés, abonnement Premium
-  absent, erreur 403…), MusicApp l'explique et les deux chemins sans compte restent disponibles.
-
-  HONNÊTETÉ : cette création directe n'a pu être essayée que contre une SIMULATION de Spotify (échange de code
-  PKCE, renouvellement du jeton, recherche, création, ajout par paquets de 100, erreurs 401 / 403 / 429 / 5xx,
-  coupures réseau). Le vrai Spotify peut se comporter autrement sur un détail : faites un premier essai avec
-  une setlist de 3 titres avant de compter dessus. Idem pour Apple Music et les services de transfert :
-  aucun n'a été contacté pendant le développement.
+3. ÉCOUTER UN TITRE : SPOTIFY ET APPLE MUSIC
+--------------------------------------------
+L'icône casque d'une chanson ouvre le titre dans Spotify ou Apple Music (une recherche « Titre Artiste »).
+Pour aller droit à la bonne version : dans Spotify ou Apple Music, Partager → Copier le lien, puis collez-le dans
+la fenêtre du casque : il est gardé avec la chanson (copie, sauvegarde, partage). MusicApp ne se connecte à aucun
+de ces services.
 
 
 4. PARTAGER LES SETS AVEC LE GROUPE : LE MODE ÉQUIPE (FACULTATIF)
@@ -372,10 +328,10 @@ LIMITES, à lire avant de s'y fier :
 
 6. LIMITES CONNUES
 ------------------
-  - Anciens iPad et iPhone (iOS 12, par exemple l'iPad mini 2) : depuis la version 6.0.1, les fenêtres (Réglages,
-    Aide, import…) s'affichent et l'import de fichiers fonctionne. Sur ces appareils, il reste trois limites :
+  - Anciens iPad et iPhone (iOS 12, par exemple l'iPad mini 2) : depuis la version 6.0.2, les fenêtres (Réglages,
+    Aide, import…) s'affichent, la liste des chansons n'est plus tassée et l'import de fichiers fonctionne.
+    Sur ces appareils, il reste deux limites :
       · le glisser-déposer des chansons dans une playlist ne répond pas : utilisez les flèches ou le numéro ;
-      · « Voix : Réduite » du karaoké et le ralentissement sans changer la hauteur n'ont pas pu être essayés ;
       · quelques détails d'affichage diffèrent (contours de focus, cases à cocher sans couleur d'accent).
     Les essais ont été faits en imitant Safari 12 dans un navigateur, pas sur un vrai iPad sous iOS 12.
   - La durée d'un set est une ESTIMATION tant que les durées ne sont pas saisies titre par titre
@@ -412,8 +368,9 @@ LIMITES, à lire avant de s'y fier :
 7. RACCOURCIS (clavier ou pédale Bluetooth)
 -------------------------------------------
   (Avec un pédalier réglé — point 2 —, c'est son réglage qui commande : les touches apprises passent avant.)
-  Espace            démarre / arrête le défilement (et la musique, si la chanson a son fichier audio)
-                    pendant une synchronisation des paroles : Espace ou Entrée = « Ligne suivante »
+  Espace            démarre / arrête le défilement (ou la lecture minutée)
+  Entrée            ligne suivante (Maj + Entrée : précédente) ; sur une chanson minutée, recale les paroles
+                    pendant « Minuter en écoutant » : Espace ou Entrée = « Ligne suivante »
   ← →               chanson précédente / suivante
   ↑ ↓               défilement à la main
   Maj + ↑ / ↓       partie précédente / suivante      (ou  [  et  ] )
@@ -424,7 +381,7 @@ LIMITES, à lire avant de s'y fier :
 
 8. POUR QUI DÉVELOPPE : SOURCES, COMPILATION, TESTS (facultatif)
 -----------------------------------------------------------------
-  MusicApp-v6-sources.zip contient le code découpé en modules (src/, 35 fichiers .js), le script SQL du mode
+  MusicApp-v6.1-sources.zip contient le code découpé en modules (src/, 34 fichiers .js), le script SQL du mode
   Équipe (src/team.sql), le gabarit de la page (src/template.html), les fichiers fixes (public/ : sw.js,
   manifeste, icônes), build.js, legacy-css.js (équivalents CSS pour les anciens Safari, appliqués à la compilation) et les tests (test/).
   Il faut Node.js 20.19 ou plus récent (22 recommandé) : jsdom, qui simule le navigateur pour les tests, l'exige.
@@ -435,7 +392,7 @@ LIMITES, à lire avant de s'y fier :
                              puis les tests du script SQL (test/test-team-sql.js)
 
   Les tests simulent le navigateur (jsdom) : bibliothèque, éditeur, prompteur, repères de section, partage,
-  import / export, liens d'écoute, grilles d'accords, pédalier, playlist Spotify contre un faux Spotify, Drive simulé,
+  import / export, liens d'écoute, grilles d'accords, pédalier, suivi des paroles (horloge simulée),
   fichiers de l'installation hors ligne, et le mode Équipe contre un faux Supabase (test/fake-supabase.js) : l'interface
   REST simulée est branchée sur un vrai PostgreSQL (PGlite, PostgreSQL compilé en WebAssembly) dans lequel le
   script src/team.sql est exécuté tel quel, sous le rôle « anon » comme le fait Supabase pour une clé publique.
@@ -445,14 +402,14 @@ LIMITES, à lire avant de s'y fier :
   au lieu de PGlite (variables d'environnement TEAM_POSTGREST_URL, TEAM_PG_URL, TEAM_REAL_DIR et
   TEAM_JWT_SECRET, décrites au début du fichier ; il faut aussi le module « pg ») : la série « équipe » a
   été passée ainsi contre PostgreSQL 17 avec PostgREST 12.2.12, puis 14.2.
-  Ce que jsdom ne peut pas vérifier (mise en page réelle, service worker, redirection de connexion Spotify,
+  Ce que jsdom ne peut pas vérifier (mise en page réelle, service worker,
   menu de partage d'un iPhone) a été contrôlé séparément dans un vrai Chromium (« node test/smoke-chromium.js »
   fait ce contrôle sur la version compilée, service worker compris ; « node test/team-chromium.js » ouvre la
   fenêtre de configuration de l'équipe sur un téléphone et sur un ordinateur, avec le même faux Supabase, et
-  enregistre des captures d'écran ; « node test/karaoke-chromium.js », après « node build.js --test », essaie le
-  karaoké avec un vrai fichier audio de synthèse : lecture, synchronisation, voix réduite mesurée fréquence par
-  fréquence, piste instrumentale, rechargement ; « node test/ios12-chromium.js dist/index.html » imite Safari 12
+  enregistre des captures d'écran ; « node test/follow-chromium.js », après « node build.js --test », essaie le
+  suivi des paroles : ligne en cours pendant le défilement, ligne par ligne, fichier .lrc, lecture minutée,
+  recalage et tempo appris, LRCLIB simulé, « Minuter en écoutant », rechargement ; « node test/ios12-chromium.js dist/index.html » imite Safari 12
   (iPad mini 2) en retirant de Chromium ce que ce navigateur ne connaît pas, puis ouvre Réglages, Aide, importe une
-  playlist et lance le prompteur). Le menu de partage d'iOS ou d'Android, et les vrais serveurs Spotify,
-  Apple Music et Supabase, n'ont pu être essayés que simulés : testez sur vos propres appareils avant de
+  playlist et lance le prompteur). Le menu de partage d'iOS ou d'Android, et les vrais serveurs LRCLIB
+  et Supabase, n'ont pu être essayés que simulés : testez sur vos propres appareils avant de
   compter dessus.
